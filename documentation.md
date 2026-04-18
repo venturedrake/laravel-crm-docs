@@ -6,6 +6,13 @@
 - [Configuration](/configuration)
 - [Upgrade Guide](/upgrading)
 
+## User Interface
+- [Overview](/user-interface/overview)
+- [Dashboard](/user-interface/dashboard)
+- [Leads & Deals](/user-interface/leads-and-deals)
+- [Contacts](/user-interface/contacts)
+- [Quotes, Orders & Invoices](/user-interface/quotes-orders-invoices)
+
 ## Reference
 - [Leads](/reference/leads)
 - [Deals](/reference/deals)
@@ -29,12 +36,6 @@
 - [Permissions](/reference/permissions)
 - [Teams](/reference/teams)
 
-## User Interface
-- [Overview](/user-interface/overview)
-- [Dashboard](/user-interface/dashboard)
-- [Leads & Deals](/user-interface/leads-and-deals)
-- [Contacts](/user-interface/contacts)
-- [Quotes, Orders & Invoices](/user-interface/quotes-orders-invoices)
 
 ## Integrations
 - [Xero](/integrations/xero)
