@@ -1,7 +1,6 @@
 # Documentation
 
 ## Getting Started
-- [Getting Started](/getting-started)
 - [Quick Start](/quickstart)
 - [Installation](/installation)
 - [Configuration](/configuration)
