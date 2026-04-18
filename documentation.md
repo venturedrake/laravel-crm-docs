@@ -31,6 +31,10 @@
 
 ## User Interface
 - [Overview](/user-interface/overview)
+- [Dashboard](/user-interface/dashboard)
+- [Leads & Deals](/user-interface/leads-and-deals)
+- [Contacts](/user-interface/contacts)
+- [Quotes, Orders & Invoices](/user-interface/quotes-orders-invoices)
 
 ## Integrations
 - [Xero](/integrations/xero)
