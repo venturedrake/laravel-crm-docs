@@ -4,21 +4,69 @@
 
 ## Overview
 
-Custom fields can be associated to Eloquent models to allow custom data to be stored. You can use these fields to store any additional custom data you would like to collect in your CRM without needing to add fields to the core tables.
+Custom fields allow you to extend CRM entities with additional data fields without modifying the database schema. Fields belong to [Custom Field Groups](/reference/custom-field-groups) and store their values via a polymorphic `FieldValue` model. Supported on [Leads](/reference/leads), [Deals](/reference/deals), [Orders](/reference/orders), [Quotes](/reference/quotes), [Invoices](/reference/invoices), and other entities that use the `HasCrmFields` trait.
 
-## Fields
+## Models
+
+### Field
+
+**Model:** `VentureDrake\LaravelCrm\Models\Field`  
+**Table:** `{prefix}fields` (default: `crm_fields`)
+
+| Attribute      | Type     | Description                          |
+|----------------|----------|--------------------------------------|
+| `name`         | `string` | Field name                          |
+| `handle`       | `string` | Unique handle for programmatic access |
+| `type`         | `string` | Field type (text, textarea, select, etc.) |
+| `required`     | `boolean`| Whether the field is required       |
+| `order`        | `integer`| Display order                       |
+| `field_group_id` | `integer`| Parent field group                 |
+
+#### Relationships
+
+| Method          | Type       | Related Model | Description |
+|-----------------|------------|---------------|-------------|
+| `fieldGroup()`  | `belongsTo`| `FieldGroup`  | Parent group |
+| `fieldOptions()`| `hasMany`  | `FieldOption` | Options for select-type fields |
+
+### FieldValue
+
+**Model:** `VentureDrake\LaravelCrm\Models\FieldValue`  
+**Table:** `{prefix}field_values` (default: `crm_field_values`)
+
+Stores the actual custom field data for each entity instance.
+
+| Attribute      | Type     | Description                          |
+|----------------|----------|--------------------------------------|
+| `field_id`     | `integer`| The field definition                |
+| `value`        | `text`   | The stored value                    |
+| `custom_field_valueable_type` | `string` | Polymorphic type          |
+| `custom_field_valueable_id`   | `integer`| Polymorphic ID            |
+
+#### Relationships
+
+| Method          | Type       | Related Model | Description |
+|-----------------|------------|---------------|-------------|
+| `field()`       | `belongsTo`| `Field`       | The field definition |
+| `fieldValueable()` | `morphTo` | `*`           | The parent entity |
+
+## Usage
 
 ```php
-VentureDrake\LaravelCrm\Models\Field
+// Access custom field values on an entity
+$lead->customFieldValues;
+
+// Get a specific custom field value
+$value = $lead->customFieldValues()
+    ->whereHas('field', fn ($q) => $q->where('handle', 'source_url'))
+    ->first();
 ```
 
-|Field|Description|
-|:-|:-|
-|`type`|Field type|
-|`name`|Field name|
-|`label`|Field label|
-|`required`|Boolean|
-|`default`||
-|`validation`||
+## Traits
 
-## Field Groups
+All custom field models use:
+
+| Trait              | Description                |
+|--------------------|----------------------------|
+| `SoftDeletes`      | Soft delete support        |
+| `BelongsToTeams`  | Multi-tenant team scoping |
