@@ -1,3 +1,0 @@
-# Configuration
-
-Configure your settings.

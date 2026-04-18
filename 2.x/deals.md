@@ -1,3 +1,0 @@
-# Deals
-
-Documentation coming soon.

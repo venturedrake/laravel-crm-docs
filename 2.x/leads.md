@@ -1,3 +1,0 @@
-# Leads
-
-Documentation coming soon.

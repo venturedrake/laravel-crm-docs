@@ -1,3 +1,0 @@
-# Organizations
-
-Documentation coming soon.

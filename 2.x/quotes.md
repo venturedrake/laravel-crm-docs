@@ -1,3 +1,0 @@
-# Quotes
-
-Documentation coming soon.

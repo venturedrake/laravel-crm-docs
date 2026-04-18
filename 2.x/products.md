@@ -1,3 +1,0 @@
-# Products
-
-Documentation coming soon.
