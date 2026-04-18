@@ -1,9 +1,9 @@
 # Documentation
 
 ## Getting Started
+- [Quick Start](/quickstart)
 - [Installation](/installation)
 - [Configuration](/configuration)
-- [Quickstart](/quickstart)
 - [Upgrade Guide](/upgrading)
 
 ## Reference
