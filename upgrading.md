@@ -34,13 +34,24 @@ php artisan vendor:publish --provider="VentureDrake\LaravelCrm\LaravelCrmService
 php artisan migrate
 ```
 
-### Step 3. Update Permissions
+### Step 3. Run the v2 Migration Helper
+
+The package ships a one-shot command that backfills new 2.x columns, normalises existing data, and seeds new lookup tables required by the rewritten UI:
+
+```bash
+php artisan laravelcrm:v2
+```
+
+Run this **once** after migrating from a 1.x installation.
+
+### Step 4. Update Permissions & Custom Fields
 
 ```bash
 php artisan laravelcrm:permissions
+php artisan laravelcrm:fields
 ```
 
-### Step 4. Clear Caches
+### Step 5. Clear Caches
 
 ```bash
 php artisan cache:clear
@@ -52,25 +63,29 @@ php artisan view:clear
 
 Follow these steps when upgrading between 2.x releases.
 
-### Step 1. Update Package & Publish Assets
+### Step 1. Update the Package
 
 ```bash
 composer require venturedrake/laravel-crm
+```
+
+### Step 2. Run the Update Routine
+
+The `laravelcrm:update` command re-publishes config/migrations/assets, runs new migrations, and re-seeds permissions, labels, and custom fields in one step:
+
+```bash
+php artisan laravelcrm:update
+```
+
+If you prefer to run each step manually, the equivalent commands are:
+
+```bash
 php artisan vendor:publish --provider="VentureDrake\LaravelCrm\LaravelCrmServiceProvider" --tag="migrations"
 php artisan vendor:publish --provider="VentureDrake\LaravelCrm\LaravelCrmServiceProvider" --tag="assets" --force
 php artisan migrate
-```
-
-### Step 2. Run the Database Seeder
-
-```bash
-php artisan db:seed --class="VentureDrake\LaravelCrm\Database\Seeders\LaravelCrmTablesSeeder"
-```
-
-### Step 3. Update Permissions
-
-```bash
 php artisan laravelcrm:permissions
+php artisan laravelcrm:labels
+php artisan laravelcrm:fields
 ```
 
 ## General Upgrade Tips

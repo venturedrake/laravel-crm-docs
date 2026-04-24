@@ -77,14 +77,21 @@ php artisan laravelcrm:sample-data
 # Seed default labels
 php artisan laravelcrm:labels
 
+# Seed default custom fields and field groups
+php artisan laravelcrm:fields
+
 # Seed address types
-php artisan laravelcrm:address-types
+php artisan laravelcrm:addresstypes
 
 # Seed organisation types
-php artisan laravelcrm:organization-types
+php artisan laravelcrm:organizationtypes
 
 # Seed contact types
-php artisan laravelcrm:contact-types
+php artisan laravelcrm:contacttypes
+
+# Run the post-update routine (re-publishes assets, runs new migrations,
+# re-seeds permissions/labels/fields). Run this after every package update.
+php artisan laravelcrm:update
 ```
 
 ## Route Prefix
