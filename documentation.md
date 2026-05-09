@@ -1,6 +1,6 @@
 # Documentation
 
-## Getting Started
+## Overview
 - [Installation](/installation)
 - [Configuration](/configuration)
 - [Upgrade Guide](/upgrading)
