@@ -16,8 +16,6 @@ Version 2.x is a major rewrite of the user interface and frontend stack. The bac
 
 ### New Modules
 
-- **Deliveries** — Track physical shipments from orders
-- **Purchase Orders** — Manage supplier purchase orders
 - **Chat** — Live chat with embeddable visitor widget — see [Chat](/chat)
 - **Email Marketing** — Campaign and template management with open/click tracking — see [Email Marketing](/email-marketing)
 - **SMS Marketing** — Campaign and template management via ClickSend — see [SMS Marketing](/sms-marketing)
