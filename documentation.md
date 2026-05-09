@@ -22,6 +22,7 @@
 - [Invoices](/invoices)
 - [Deliveries](/deliveries)
 - [Purchase Orders](/purchase-orders)
+- [Tasks](/tasks)
 - [Activity](/activity)
 - [Labels](/labels)
 - [Lead Sources](/lead-sources)
@@ -34,16 +35,13 @@
 - [Roles](/roles)
 - [Permissions](/permissions)
 - [Teams](/teams)
-
-## Marketing
 - [Email Marketing](/email-marketing)
 - [SMS Marketing](/sms-marketing)
-
-## Chat
 - [Chat](/chat)
 
 ## Integrations
 - [Xero](/xero)
+- [ClickSend](/clicksend)
 
 ## Other
 - [Security](/security)
