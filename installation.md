@@ -34,29 +34,7 @@ The installer will:
 5. Seed default data (roles, permissions, pipeline stages, settings)
 6. Prompt you to create an owner user (or grant access to an existing user)
 
-### Step 3. Update Your User Model
-
-Add the `HasCrmAccess`, `HasCrmTeams`, and `HasRoles` traits to your `User` model:
-
-```php
-namespace App\Models;
-
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Spatie\Permission\Traits\HasRoles;
-use VentureDrake\LaravelCrm\Traits\HasCrmAccess;
-use VentureDrake\LaravelCrm\Traits\HasCrmTeams;
-
-class User extends Authenticatable
-{
-    use HasRoles;
-    use HasCrmAccess;
-    use HasCrmTeams;
-
-    // ...
-}
-```
-
-### Step 4. Access the CRM
+### Step 3. Access the CRM
 
 Navigate to `http://<yoursite>/crm` (or whatever you set `LARAVEL_CRM_ROUTE_PREFIX` to). Log in with the owner credentials you created during installation.
 
