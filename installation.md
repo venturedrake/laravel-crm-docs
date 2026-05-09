@@ -7,7 +7,7 @@
 - PHP ^8.1
 - MySQL 5.7+ / MariaDB 10.2.7+
 - Laravel 10, 11, 12, or 13
-- Livewire 3
+- Livewire 3 or 4
 
 ## Install Laravel CRM
 

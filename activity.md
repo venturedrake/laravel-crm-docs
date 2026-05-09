@@ -4,7 +4,7 @@
 
 ## Overview
 
-Activities track interactions and events across the CRM. Each activity uses three polymorphic relationships to record who caused the activity, which entity's timeline it appears on, and what record was affected. This provides a comprehensive audit trail and activity feed.
+Activities track interactions and events across the CRM. Each activity uses three polymorphic relationships to record who caused the activity, which entity's timeline it appears on, and what record was affected. This provides a comprehensive activity feed and history.
 
 **Model:** `VentureDrake\LaravelCrm\Models\Activity`
 **Table:** `{prefix}activities` (default: `crm_activities`)

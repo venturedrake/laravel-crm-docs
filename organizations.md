@@ -79,4 +79,4 @@ Searchable by `name`. Filterable by `user_owner_id` and `labels.id`. Sortable by
 | `SearchFilters` | Search and filter capabilities |
 | `Sortable` | Column sorting |
 | `HasCrmActivities` | Activity timeline tracking |
-| `HasCrmUserRelations` | Standard user audit relations |
+| `HasCrmUserRelations` | Standard user tracking relations |

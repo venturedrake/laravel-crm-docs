@@ -32,9 +32,6 @@ php artisan laravelcrm:encrypt
 
 Encrypted fields are declared in each model's `$encryptable` array and handled transparently by the `LaravelEncryptableTrait`.
 
-## Audit Trail
-
-All CRM models are automatically audited via `owen-it/laravel-auditing`. Every create, update, and delete operation is logged with the acting user and changed values.
 
 ## Reporting Vulnerabilities
 

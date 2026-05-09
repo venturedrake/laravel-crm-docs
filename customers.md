@@ -63,5 +63,5 @@ Searchable by the underlying person or organisation names.
 | `SearchFilters` | Search and filter capabilities |
 | `Sortable` | Column sorting |
 | `HasCrmActivities` | Activity timeline tracking |
-| `HasCrmUserRelations` | Standard user audit relations |
+| `HasCrmUserRelations` | Standard user tracking relations |
 

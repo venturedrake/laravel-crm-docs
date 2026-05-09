@@ -36,7 +36,7 @@ class User extends Authenticatable
 }
 ```
 
-## User Audit Relations
+## User Tracking Relations
 
 Most CRM models track which user created, updated, deleted, and restored records via standard foreign key relationships:
 
