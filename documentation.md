@@ -4,6 +4,8 @@
 - [Installation](/installation)
 - [Configuration](/configuration)
 - [Upgrade Guide](/upgrading)
+- [Security](/security)
+- [Contributing](/contributing)
 
 ## User Interface
 - [Overview](/overview)
@@ -43,6 +45,3 @@
 - [Xero](/xero)
 - [ClickSend](/clicksend)
 
-## Other
-- [Security](/security)
-- [Contributing](/contributing)
