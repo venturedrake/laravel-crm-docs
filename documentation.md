@@ -24,6 +24,9 @@
 - [Purchase Orders](/purchase-orders)
 - [Activity](/activity)
 - [Labels](/labels)
+- [Lead Sources](/lead-sources)
+- [Pipelines](/pipelines)
+- [Tax Rates](/tax-rates)
 - [Addresses](/addresses)
 - [Custom Fields](/custom-fields)
 - [Custom Field Groups](/custom-field-groups)
@@ -31,6 +34,13 @@
 - [Roles](/roles)
 - [Permissions](/permissions)
 - [Teams](/teams)
+
+## Marketing
+- [Email Marketing](/email-marketing)
+- [SMS Marketing](/sms-marketing)
+
+## Chat
+- [Chat](/chat)
 
 ## Integrations
 - [Xero](/xero)

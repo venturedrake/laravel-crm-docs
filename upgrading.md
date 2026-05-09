@@ -9,7 +9,7 @@ Version 2.x is a major rewrite of the user interface and frontend stack. The bac
 ### Breaking Changes
 
 - **UI stack**: Bootstrap 4 + jQuery replaced with Tailwind CSS v4 + DaisyUI v5 + MaryUI
-- **Livewire**: Upgraded from Livewire 2 to Livewire 3. All Livewire components have been rewritten.
+- **Livewire**: Upgraded from Livewire 2 to Livewire 3 or 4. All Livewire components have been rewritten.
 - **PHP requirement**: Minimum PHP version is now 8.1 (was 7.3)
 - **Laravel requirement**: Minimum Laravel version is now 10 (was 6)
 - **Views**: All Blade views have been rewritten. If you published and customized views, you will need to re-apply customizations to the new templates.
@@ -18,6 +18,9 @@ Version 2.x is a major rewrite of the user interface and frontend stack. The bac
 
 - **Deliveries** — Track physical shipments from orders
 - **Purchase Orders** — Manage supplier purchase orders
+- **Chat** — Live chat with embeddable visitor widget — see [Chat](/chat)
+- **Email Marketing** — Campaign and template management with open/click tracking — see [Email Marketing](/email-marketing)
+- **SMS Marketing** — Campaign and template management via ClickSend — see [SMS Marketing](/sms-marketing)
 
 ### Step 1. Update Package
 

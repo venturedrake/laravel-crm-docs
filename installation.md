@@ -77,6 +77,9 @@ php artisan laravelcrm:sample-data
 # Seed default labels
 php artisan laravelcrm:labels
 
+# Seed default lead sources
+php artisan laravelcrm:lead-sources
+
 # Seed default custom fields and field groups
 php artisan laravelcrm:fields
 

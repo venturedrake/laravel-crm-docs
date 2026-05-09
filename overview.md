@@ -30,6 +30,15 @@ The sidebar navigation is organized into the following sections:
 ### Activity
 - **Activity** — Unified view of all activities including tasks, notes, calls, meetings, lunches, and files.
 
+### Marketing
+- **Email Campaigns** — Create, schedule, and send email marketing campaigns to subscribed contacts.
+- **Email Templates** — Reusable email templates with TinyMCE rich-text editing.
+- **SMS Campaigns** — Create, schedule, and send SMS marketing campaigns via ClickSend.
+- **SMS Templates** — Reusable SMS message templates.
+
+### Chat
+- **Conversations** — Live chat inbox for visitor conversations from the embeddable chat widget.
+
 ### Fulfilment
 - **Orders** — Manage orders with line items and downloadable PDFs.
 - **Invoices** — Create, send, and track invoice payments with PDF downloads.
@@ -47,7 +56,7 @@ The sidebar navigation is organized into the following sections:
 - **Products** — Product catalogue with search and autocomplete.
 
 ### Administration
-- **Settings** — CRM configuration, integrations, pipelines, labels, custom fields, tax rates, and permissions.
+- **Settings** — CRM configuration, integrations (Xero, ClickSend), pipelines, pipeline stages, labels, lead sources, custom fields, custom field groups, tax rates, product attributes, product categories, chat widgets, and permissions.
 - **Updates** — Check for package updates.
 
 ## Common UI Patterns

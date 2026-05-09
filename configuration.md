@@ -148,6 +148,9 @@ Enable or disable CRM modules based on your business needs. Remove a module from
     'deliveries',
     'purchase-orders',
     'teams',
+    'chat',
+    'email-marketing',
+    'sms-marketing',
 ],
 ```
 
@@ -161,6 +164,9 @@ Enable or disable CRM modules based on your business needs. Remove a module from
 | `deliveries` | Delivery tracking for physical goods |
 | `purchase-orders` | Purchase order management for suppliers |
 | `teams` | User team grouping within the CRM |
+| `chat` | Live chat with embeddable widget — see [Chat](/chat) |
+| `email-marketing` | Email campaigns and templates — see [Email Marketing](/email-marketing) |
+| `sms-marketing` | SMS campaigns and templates — see [SMS Marketing](/sms-marketing) |
 
 > **Tip:** If you sell digital products or services, you can remove `deliveries` since it won't be relevant.
 
