@@ -46,6 +46,9 @@
 - [Teams](/teams)
 - [Users](/users)
 
+## API
+- [API](/api)
+
 ## Integrations
 - [Xero](/xero)
 - [ClickSend](/clicksend)
