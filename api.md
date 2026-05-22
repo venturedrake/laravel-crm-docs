@@ -11,13 +11,26 @@ Laravel CRM ships with a JSON REST API for partner developers and external integ
 - **Authentication:** Sanctum bearer tokens
 - **Current version:** `v2`
 
-The API exposes **8 resourceful entities** — leads, products, organizations, people, deals, quotes, orders, and invoices — with full CRUD (list, create, show, update, soft-delete), plus 3 auth endpoints for issuing, inspecting, and revoking tokens.
+The API exposes **8 resourceful entities** with full CRUD (list, create, show, update, soft-delete), plus 3 auth endpoints for issuing, inspecting, and revoking tokens.
+
+### Entity references
+
+Each entity has its own reference page covering endpoints, list parameters, JSON shape, and writable fields:
+
+- [Leads](/api-leads)
+- [Products](/api-products)
+- [Organizations](/api-organizations)
+- [People](/api-people)
+- [Deals](/api-deals)
+- [Quotes](/api-quotes)
+- [Orders](/api-orders)
+- [Invoices](/api-invoices)
 
 ## Requirements
 
 - Laravel CRM installed and migrated.
 - Laravel Sanctum installed in the host application.
-- A CRM user with `crm_access` to issue tokens for.
+- A CRM user with `crm_access` granted, to issue tokens against.
 
 ## Installation
 
@@ -54,7 +67,7 @@ You should see 8 resourceful entities (5 verbs each), plus the 3 auth routes.
 
 ## Authentication
 
-The API uses Sanctum personal access tokens. Tokens can be issued through the API itself or via an artisan command for ops use.
+The API uses Sanctum personal access tokens. Tokens can be issued through the API itself, or via an artisan command for ops use.
 
 ### Issue a token via the API
 
@@ -69,7 +82,7 @@ Content-Type: application/json
 }
 ```
 
-**Response (201):**
+**Response (`201 Created`):**
 
 ```json
 {
@@ -104,19 +117,38 @@ Authorization: Bearer 1|abcdef1234...
 Accept: application/json
 ```
 
-### Inspecting and revoking the current token
+### Inspecting the current user
 
 ```http
-GET    /api/crm/v2/auth/me      → 200 { id, name, email }
-DELETE /api/crm/v2/auth/token   → 204 (revokes the token used in the request)
+GET /api/crm/v2/auth/me
 ```
+
+**Response (`200 OK`):**
+
+```json
+{
+  "user": {
+    "id": 1,
+    "name": "Jane Doe",
+    "email": "user@example.com"
+  }
+}
+```
+
+### Revoking the current token
+
+```http
+DELETE /api/crm/v2/auth/token
+```
+
+Returns `204 No Content` and deletes the personal access token used to authenticate the request.
 
 ## Headers
 
 | Header | Required | Purpose |
 |---|---|---|
 | `Authorization: Bearer <token>` | Yes (except `POST /auth/token`) | Sanctum personal access token. |
-| `Accept: application/json` | Recommended | Forces JSON responses. |
+| `Accept: application/json` | Recommended | Forces JSON responses (the `laravel-crm.api.json` middleware sets this automatically when missing). |
 | `Content-Type: application/json` | Yes (for `POST` / `PUT`) | Request body is JSON. |
 | `X-Team-ID: <team-id>` | Optional | Overrides the authenticated user's active team for the request. Must be a team the user belongs to; otherwise the API returns `403`. Only relevant when `laravel-crm.teams=true`. |
 
@@ -126,9 +158,9 @@ When the host app runs in teams mode (`config('laravel-crm.teams', true)`):
 
 - Without `X-Team-ID`, requests are scoped to the user's `current_team_id`.
 - With `X-Team-ID`, list / store / update / delete endpoints run in the context of that team.
-- `GET /{resource}/{uuid}` resolves the route-bound model using the user's *default* current team because Laravel's `SubstituteBindings` middleware runs before the team-context middleware. Use the list endpoints (filtered by `X-Team-ID`) to discover the correct UUIDs for the active team.
+- `GET /{resource}/{uuid}` resolves the route-bound model using the user's **default** current team, because Laravel's `SubstituteBindings` middleware runs before the team-context middleware. Use the list endpoints (filtered by `X-Team-ID`) to discover the correct UUIDs for the active team.
 
-## Endpoints
+## Endpoint summary
 
 ### Auth
 
@@ -152,45 +184,28 @@ All entity endpoints follow the same RESTful shape:
 
 `{uuid}` is the entity's `external_id` (UUID), exposed as `id` in JSON responses.
 
-| Resource | Path | Notable fields |
+| Resource | Path | Reference |
 |---|---|---|
-| Lead | `/api/crm/v2/leads` | `title`, `description`, `amount`, `currency`, `expected_close`, `person_id`, `organization_id`, `lead_source_id`, `pipeline_stage_id`, `labels[]`, `user_owner_id` |
-| Product | `/api/crm/v2/products` | `name`, `code`, `description`, `unit_price`, `currency`, `tax_rate`, `tax_rate_id`, `product_category_id`, `active`, `user_owner_id` |
-| Organization | `/api/crm/v2/organizations` | `name`, `website`, `email`, `phone`, `annual_revenue`, `total_money_raised`, `number_of_employees`, `industry_id`, `organization_type_id`, `timezone_id`, `labels[]`, `user_owner_id` |
-| Person | `/api/crm/v2/people` | `first_name`, `last_name`, `gender`, `birthday`, `description`, `organization_id`, `labels[]`, `user_owner_id` |
-| Deal | `/api/crm/v2/deals` | `title`, `description`, `amount`, `currency`, `expected_close`, `lead_id`, `person_id`, `organization_id`, `pipeline_stage_id`, `labels[]`, `user_owner_id` |
-| Quote | `/api/crm/v2/quotes` | `title`, `description`, `issue_at`, `expire_at`, `currency`, `sub_total`, `discount`, `tax`, `adjustment`, `total`, `person_id`, `organization_id`, `labels[]`, `line_items[]` |
-| Order | `/api/crm/v2/orders` | `description`, `currency`, `sub_total`, `discount`, `tax`, `adjustment`, `total`, `person_id`, `organization_id`, `labels[]`, `line_items[]` |
-| Invoice | `/api/crm/v2/invoices` | `reference`, `issue_date`, `due_date`, `currency`, `sub_total`, `discount`, `tax`, `adjustment`, `total`, `amount_due`, `amount_paid`, `person_id`, `organization_id`, `labels[]`, `line_items[]` |
+| Lead | `/api/crm/v2/leads` | [Leads](/api-leads) |
+| Product | `/api/crm/v2/products` | [Products](/api-products) |
+| Organization | `/api/crm/v2/organizations` | [Organizations](/api-organizations) |
+| Person | `/api/crm/v2/people` | [People](/api-people) |
+| Deal | `/api/crm/v2/deals` | [Deals](/api-deals) |
+| Quote | `/api/crm/v2/quotes` | [Quotes](/api-quotes) |
+| Order | `/api/crm/v2/orders` | [Orders](/api-orders) |
+| Invoice | `/api/crm/v2/invoices` | [Invoices](/api-invoices) |
 
 ## Conventions
 
-- **IDs are UUIDs.** The JSON `id` is always the entity's `external_id`. Integer primary keys are never exposed. Lookup tables (lead source, pipeline stage, industry, etc.) accept integer IDs.
-- **Money is dollars in JSON; cents in storage.** All amount / price / total fields are sent and returned as decimal dollars (e.g. `1500.50`). The package converts to integer cents on write.
-- **Timestamps are ISO-8601** with timezone offset, e.g. `2026-07-15T10:00:00+00:00` (`Z` UTC suffix is also accepted on input).
+- **IDs are UUIDs.** The JSON `id` is always the entity's `external_id`. Integer primary keys are never exposed.
+- **Foreign keys are also UUIDs** for CRM entities — e.g. `person_id`, `organization_id`, `lead_id`, `pipeline_stage_id`, `lead_source_id`, `product_category_id`, and every `labels[]` entry must be a UUID (the related row's `external_id`).
+- **Some lookups are integer IDs.** Host-app users (`user_owner_id`) and a handful of small reference tables that aren't UUID-backed use integer primary keys: `tax_rate_id`, `organization_type_id`, `industry_id`, `timezone_id`.
+- **Human-readable IDs are returned, not accepted.** Entities also expose a sequential identifier (`lead_id`, `deal_id`, `quote_id`, `order_id`, `invoice_id`, e.g. `L1001`, `D1001`) in the response. These are read-only and assigned automatically.
+- **Money is dollars in JSON; cents in storage.** All amount / price / total / subtotal / discount / tax / adjustments fields are sent and returned as decimal dollars (e.g. `1500.50`). The package converts to integer cents on write.
+- **Timestamps are ISO-8601** and must include a timezone offset or the `Z` UTC suffix on input — e.g. `2026-07-15T10:00:00+00:00` or `2026-07-15T10:00:00Z`. Other formats are rejected with a `422`.
 - **Pagination:** `?per_page=N` (1–100, default 25). Responses use Laravel's standard pagination envelope (`data`, `meta`, `links`).
 - **Sorting:** `?sort=field` ascending; `?sort=-field` descending. Unknown columns are silently ignored. Default sort is `-created_at`.
-- **Filtering:** `?user_owner_id=<int>` is supported on list endpoints (and `?active=` on products). Other filters are documented per-resource as needed.
 - **Soft deletes:** `DELETE` returns `204` and soft-deletes the row. Subsequent `GET`s return `404`.
-
-### Nested line items (Quote / Order / Invoice)
-
-The `line_items` array is accepted on `POST` and `PUT`. Each item has the following shape:
-
-```json
-{
-  "id": "8f1a...optional-uuid-for-existing-line",
-  "product_id": "44d4...product-uuid",
-  "quantity": 2,
-  "unit_price": 100.00,
-  "amount": 200.00,
-  "comments": "Optional notes"
-}
-```
-
-- **Create:** omit `id`. A new line is inserted.
-- **Update in place:** include the existing line's `id` (UUID). The line is updated.
-- **Replace lines:** omit `id` on every line in a `PUT`. Existing lines not matched in the payload are deleted.
 
 ## Errors
 
@@ -229,10 +244,6 @@ For the `X-Team-ID` non-member case:
 ### `404 Not Found`
 
 Returned when a UUID does not resolve to a model (or it has been soft-deleted).
-
-```json
-{ "message": "..." }
-```
 
 ### `429 Too Many Requests`
 

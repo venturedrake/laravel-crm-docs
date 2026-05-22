@@ -47,7 +47,15 @@
 - [Users](/users)
 
 ## API
-- [API](/api)
+- [Overview](/api)
+- [Leads](/api-leads)
+- [Products](/api-products)
+- [Organizations](/api-organizations)
+- [People](/api-people)
+- [Deals](/api-deals)
+- [Quotes](/api-quotes)
+- [Orders](/api-orders)
+- [Invoices](/api-invoices)
 
 ## Integrations
 - [Xero](/xero)
