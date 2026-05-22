@@ -8,11 +8,11 @@ See [API overview](/api) for authentication, headers, pagination, sorting, conve
 
 | Verb | Path | Action |
 |---|---|---|
-| `GET` | `/api/crm/v2/leads` | List (paginated). |
-| `POST` | `/api/crm/v2/leads` | Create. |
-| `GET` | `/api/crm/v2/leads/{uuid}` | Show. |
-| `PUT` | `/api/crm/v2/leads/{uuid}` | Update. |
-| `DELETE` | `/api/crm/v2/leads/{uuid}` | Soft-delete. |
+| `GET` | `/crm/api/v2/leads` | List (paginated). |
+| `POST` | `/crm/api/v2/leads` | Create. |
+| `GET` | `/crm/api/v2/leads/{uuid}` | Show. |
+| `PUT` | `/crm/api/v2/leads/{uuid}` | Update. |
+| `DELETE` | `/crm/api/v2/leads/{uuid}` | Soft-delete. |
 
 `{uuid}` is the lead's `external_id` (UUID), exposed as `id` in JSON responses.
 
@@ -58,7 +58,7 @@ Accepted on `POST` / `PUT` (`*` = required on `POST`):
 TOKEN="1|abcdef..."
 
 # Create
-curl -s -X POST https://example.test/api/crm/v2/leads \
+curl -s -X POST https://example.test/crm/api/v2/leads \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -69,7 +69,7 @@ curl -s -X POST https://example.test/api/crm/v2/leads \
   }' | jq .
 
 # List, newest first, filtered by owner
-curl -s "https://example.test/api/crm/v2/leads?sort=-created_at&user_owner_id=1" \
+curl -s "https://example.test/crm/api/v2/leads?sort=-created_at&user_owner_id=1" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Accept: application/json" | jq .
 ```

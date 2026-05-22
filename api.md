@@ -4,9 +4,9 @@
 
 ## Overview
 
-Laravel CRM ships with a JSON REST API for partner developers and external integrations. The API is versioned, authenticated with [Laravel Sanctum](https://laravel.com/docs/sanctum) personal access tokens, and mounted at `/api/crm/v2`.
+Laravel CRM ships with a JSON REST API for partner developers and external integrations. The API is versioned, authenticated with [Laravel Sanctum](https://laravel.com/docs/sanctum) personal access tokens, and mounted at `/crm/api/v2`.
 
-- **Base URL:** `https://your-app.test/api/crm/v2`
+- **Base URL:** `https://your-app.test/crm/api/v2`
 - **Content type:** `application/json`
 - **Authentication:** Sanctum bearer tokens
 - **Current version:** `v2`
@@ -60,7 +60,7 @@ class User extends Authenticatable
 ### 3. Verify the API routes are registered
 
 ```bash
-php artisan route:list --path=api/crm
+php artisan route:list --path=crm/api
 ```
 
 You should see 8 resourceful entities (5 verbs each), plus the 3 auth routes.
@@ -72,7 +72,7 @@ The API uses Sanctum personal access tokens. Tokens can be issued through the AP
 ### Issue a token via the API
 
 ```http
-POST /api/crm/v2/auth/token
+POST /crm/api/v2/auth/token
 Content-Type: application/json
 
 {
@@ -112,7 +112,7 @@ The plaintext token is printed once. The command exits non-zero if the user does
 Pass the token in the `Authorization` header:
 
 ```http
-GET /api/crm/v2/leads HTTP/1.1
+GET /crm/api/v2/leads HTTP/1.1
 Authorization: Bearer 1|abcdef1234...
 Accept: application/json
 ```
@@ -120,7 +120,7 @@ Accept: application/json
 ### Inspecting the current user
 
 ```http
-GET /api/crm/v2/auth/me
+GET /crm/api/v2/auth/me
 ```
 
 **Response (`200 OK`):**
@@ -138,7 +138,7 @@ GET /api/crm/v2/auth/me
 ### Revoking the current token
 
 ```http
-DELETE /api/crm/v2/auth/token
+DELETE /crm/api/v2/auth/token
 ```
 
 Returns `204 No Content` and deletes the personal access token used to authenticate the request.
@@ -166,9 +166,9 @@ When the host app runs in teams mode (`config('laravel-crm.teams', true)`):
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `POST` | `/api/crm/v2/auth/token` | Public | Issue a personal access token. |
-| `GET` | `/api/crm/v2/auth/me` | Bearer | Return the authenticated user. |
-| `DELETE` | `/api/crm/v2/auth/token` | Bearer | Revoke the current token. |
+| `POST` | `/crm/api/v2/auth/token` | Public | Issue a personal access token. |
+| `GET` | `/crm/api/v2/auth/me` | Bearer | Return the authenticated user. |
+| `DELETE` | `/crm/api/v2/auth/token` | Bearer | Revoke the current token. |
 
 ### Entities
 
@@ -186,14 +186,14 @@ All entity endpoints follow the same RESTful shape:
 
 | Resource | Path | Reference |
 |---|---|---|
-| Lead | `/api/crm/v2/leads` | [Leads](/api-leads) |
-| Product | `/api/crm/v2/products` | [Products](/api-products) |
-| Organization | `/api/crm/v2/organizations` | [Organizations](/api-organizations) |
-| Person | `/api/crm/v2/people` | [People](/api-people) |
-| Deal | `/api/crm/v2/deals` | [Deals](/api-deals) |
-| Quote | `/api/crm/v2/quotes` | [Quotes](/api-quotes) |
-| Order | `/api/crm/v2/orders` | [Orders](/api-orders) |
-| Invoice | `/api/crm/v2/invoices` | [Invoices](/api-invoices) |
+| Lead | `/crm/api/v2/leads` | [Leads](/api-leads) |
+| Product | `/crm/api/v2/products` | [Products](/api-products) |
+| Organization | `/crm/api/v2/organizations` | [Organizations](/api-organizations) |
+| Person | `/crm/api/v2/people` | [People](/api-people) |
+| Deal | `/crm/api/v2/deals` | [Deals](/api-deals) |
+| Quote | `/crm/api/v2/quotes` | [Quotes](/api-quotes) |
+| Order | `/crm/api/v2/orders` | [Orders](/api-orders) |
+| Invoice | `/crm/api/v2/invoices` | [Invoices](/api-invoices) |
 
 ## Conventions
 
@@ -266,20 +266,20 @@ Issue a token, list leads, create a lead, then revoke the token.
 
 ```bash
 # 1. Issue a token
-curl -s -X POST https://example.test/api/crm/v2/auth/token \
+curl -s -X POST https://example.test/crm/api/v2/auth/token \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","password":"secret","device_name":"curl"}' \
   | jq .
 
 # 2. List leads
 TOKEN="1|abcdef..."
-curl -s https://example.test/api/crm/v2/leads \
+curl -s https://example.test/crm/api/v2/leads \
   -H "Authorization: Bearer $TOKEN" \
   -H "Accept: application/json" \
   | jq .
 
 # 3. Create a lead
-curl -s -X POST https://example.test/api/crm/v2/leads \
+curl -s -X POST https://example.test/crm/api/v2/leads \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -291,7 +291,7 @@ curl -s -X POST https://example.test/api/crm/v2/leads \
   | jq .
 
 # 4. Revoke the token
-curl -s -X DELETE https://example.test/api/crm/v2/auth/token \
+curl -s -X DELETE https://example.test/crm/api/v2/auth/token \
   -H "Authorization: Bearer $TOKEN" \
   -i
 ```

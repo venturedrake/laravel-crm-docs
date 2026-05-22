@@ -8,11 +8,11 @@ See [API overview](/api) for authentication, headers, pagination, sorting, conve
 
 | Verb | Path | Action |
 |---|---|---|
-| `GET` | `/api/crm/v2/products` | List (paginated). |
-| `POST` | `/api/crm/v2/products` | Create. |
-| `GET` | `/api/crm/v2/products/{uuid}` | Show. |
-| `PUT` | `/api/crm/v2/products/{uuid}` | Update. |
-| `DELETE` | `/api/crm/v2/products/{uuid}` | Soft-delete. |
+| `GET` | `/crm/api/v2/products` | List (paginated). |
+| `POST` | `/crm/api/v2/products` | Create. |
+| `GET` | `/crm/api/v2/products/{uuid}` | Show. |
+| `PUT` | `/crm/api/v2/products/{uuid}` | Update. |
+| `DELETE` | `/crm/api/v2/products/{uuid}` | Soft-delete. |
 
 ## List parameters
 
