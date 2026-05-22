@@ -2,6 +2,26 @@
 
 [[toc]]
 
+## Upgrading from 2.1.x to 2.2.0
+
+Version 2.2.0 introduces a JSON REST API and adds page titles throughout the UI. There are no schema-breaking changes — follow the standard [Upgrading Within 2.x](#upgrading-within-2-x) steps.
+
+### What's new
+
+- **REST API** — Sanctum-authenticated JSON API at `/crm/api/v2` exposing 8 resourceful entities (`leads`, `products`, `organizations`, `people`, `deals`, `quotes`, `orders`, `invoices`) plus auth endpoints. See [API](/api).
+- **Page titles** — Every CRM page now sets a descriptive `<title>` tag for better browser tabs, history, and SEO.
+
+### Breaking changes
+
+- **PHP requirement** — Minimum PHP version is now **8.2** (was 8.1).
+- **Laravel requirement** — Minimum Laravel version is now **11** (was 10).
+
+If you're on PHP 8.1 or Laravel 10, upgrade those first before pulling 2.2.0.
+
+### Optional: enable the REST API
+
+If you want to use the new API, install Sanctum in the host application — see [API → Installation](/api).
+
 ## Upgrading from 1.x to 2.x
 
 Version 2.x is a major rewrite of the user interface and frontend stack. The backend API and model layer remain largely compatible.
