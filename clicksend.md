@@ -20,7 +20,7 @@ Credentials are stored as CRM settings (not `.env` values) and are managed via *
 
 ## Connecting
 
-1. Create a [ClickSend account](https://www.clicksend.com/) and retrieve your API key from the ClickSend dashboard.
+1. Create a [ClickSend account](https://clicksend.com/?u=47224) and retrieve your API key from the ClickSend dashboard.
 2. In the CRM, go to **Settings → Integrations → ClickSend** and enter your username, API key, and default sender ID.
 3. The integration activates immediately — no restart or `.env` change is required.
 

@@ -4,7 +4,7 @@
 
 ## Overview
 
-The SMS marketing module sends broadcast SMS campaigns to subscribed CRM contacts via the [ClickSend](https://www.clicksend.com/) HTTP API. Campaigns can be drafted, scheduled, and sent. Click tracking is captured via shortened redirect URLs, and unsubscribes are honoured against the contact's phone subscription flag.
+The SMS marketing module sends broadcast SMS campaigns to subscribed CRM contacts via the [ClickSend](https://clicksend.com/?u=47224) HTTP API. Campaigns can be drafted, scheduled, and sent. Click tracking is captured via shortened redirect URLs, and unsubscribes are honoured against the contact's phone subscription flag.
 
 The module is enabled via the `sms-marketing` entry in the [`modules`](/configuration#optional-modules) configuration array and is gated by the `@hassmsmarketingenabled` Blade directive.
 
