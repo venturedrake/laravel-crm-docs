@@ -151,6 +151,8 @@ Enable or disable CRM modules based on your business needs. Remove a module from
     'chat',
     'email-marketing',
     'sms-marketing',
+    'features',
+    'monitoring',
 ],
 ```
 
@@ -167,8 +169,62 @@ Enable or disable CRM modules based on your business needs. Remove a module from
 | `chat` | Live chat with embeddable widget — see [Chat](/chat) |
 | `email-marketing` | Email campaigns and templates — see [Email Marketing](/email-marketing) |
 | `sms-marketing` | SMS campaigns and templates — see [SMS Marketing](/sms-marketing) |
+| `features` | Public feature-request and voting board — see [Features](/features) |
+| `monitoring` | Uptime and SSL monitoring for HTTP/HTTPS endpoints — see [Monitoring](/monitoring) |
 
 > **Tip:** If you sell digital products or services, you can remove `deliveries` since it won't be relevant.
+
+## Monitoring
+
+Defaults for the [Monitoring](/monitoring) module. These are used by `MonitorService` when creating monitors without explicit values, and by the `RunMonitorCheck` job when scheduling and evaluating checks.
+
+```php
+'monitoring' => [
+    'default_frequency_minutes' => env('LARAVEL_CRM_MONITORING_DEFAULT_FREQUENCY_MINUTES', 5),
+    'default_ssl_days_before_expiry_alert' => env('LARAVEL_CRM_MONITORING_DEFAULT_SSL_DAYS_BEFORE_EXPIRY_ALERT', 14),
+    'request_timeout_seconds' => env('LARAVEL_CRM_MONITORING_REQUEST_TIMEOUT_SECONDS', 15),
+    'ssl_recheck_hours' => env('LARAVEL_CRM_MONITORING_SSL_RECHECK_HOURS', 12),
+    'allow_private_targets' => env('LARAVEL_CRM_MONITORING_ALLOW_PRIVATE_TARGETS', false),
+],
+```
+
+| Environment Variable | Default | Description |
+|---|---|---|
+| `LARAVEL_CRM_MONITORING_DEFAULT_FREQUENCY_MINUTES` | `5` | Default check frequency for new monitors (minutes) |
+| `LARAVEL_CRM_MONITORING_DEFAULT_SSL_DAYS_BEFORE_EXPIRY_ALERT` | `14` | Days before SSL expiry to trigger an alert |
+| `LARAVEL_CRM_MONITORING_REQUEST_TIMEOUT_SECONDS` | `15` | Default HTTP request timeout (seconds) |
+| `LARAVEL_CRM_MONITORING_SSL_RECHECK_HOURS` | `12` | How often to re-check SSL certificates |
+| `LARAVEL_CRM_MONITORING_ALLOW_PRIVATE_TARGETS` | `false` | Allow monitors to target private/loopback IPs (off by default to prevent SSRF) |
+
+## Portal
+
+Settings for the public-facing [Portal](/portal) (feature board, signed quote/invoice/purchase-order links).
+
+```php
+'portal' => [
+    'allow_registration' => env('LARAVEL_CRM_PORTAL_ALLOW_REGISTRATION', false),
+],
+```
+
+| Environment Variable | Default | Description |
+|---|---|---|
+| `LARAVEL_CRM_PORTAL_ALLOW_REGISTRATION` | `false` | Allow visitors to self-register on the portal so they can vote and comment on features |
+
+> **Note:** When enabled, `/p/register` writes rows to the host application's `users` table and dispatches Laravel's `Registered` event for each signup.
+
+## Features
+
+Settings for the [Features](/features) module.
+
+```php
+'features' => [
+    'view_dedup_minutes' => env('LARAVEL_CRM_FEATURES_VIEW_DEDUP_MINUTES', 60),
+],
+```
+
+| Environment Variable | Default | Description |
+|---|---|---|
+| `LARAVEL_CRM_FEATURES_VIEW_DEDUP_MINUTES` | `60` | View de-duplication window in minutes. Set to `0` to record every page view. |
 
 ## Update Notifications
 

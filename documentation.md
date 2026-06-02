@@ -9,6 +9,7 @@
 
 ## User Interface
 - [Overview](/overview)
+- [Portal](/portal)
 
 ## Reference
 - [Activity](/activity)
@@ -21,6 +22,7 @@
 - [Deals](/deals)
 - [Deliveries](/deliveries)
 - [Email Marketing](/email-marketing)
+- [Features](/features)
 - [Files](/files)
 - [Invoices](/invoices)
 - [Labels](/labels)
@@ -28,6 +30,7 @@
 - [Leads](/leads)
 - [Lunches](/lunches)
 - [Meetings](/meetings)
+- [Monitoring](/monitoring)
 - [Notes](/notes)
 - [Orders](/orders)
 - [Organisations](/organizations)

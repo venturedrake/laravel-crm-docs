@@ -32,7 +32,18 @@ The installer will:
 3. Publish frontend assets to `public/vendor/laravel-crm/`
 4. Run migrations (creates all `crm_`-prefixed tables)
 5. Seed default data (roles, permissions, pipeline stages, settings)
-6. Prompt you to create an owner user (or grant access to an existing user)
+6. **Prompt you to choose which optional modules to enable** (leads, deals, quotes, orders, invoices, deliveries, purchase-orders, chat, email-marketing, sms-marketing, features, monitoring)
+7. Prompt you to create an owner user (or grant access to an existing user)
+
+For non-interactive installs you can pre-select modules:
+
+```bash
+# Enable everything
+php artisan laravelcrm:install --modules=all
+
+# Enable a specific subset
+php artisan laravelcrm:install --modules=leads,deals,quotes,invoices
+```
 
 ### Step 3. Access the CRM
 

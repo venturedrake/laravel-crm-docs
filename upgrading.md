@@ -2,6 +2,53 @@
 
 [[toc]]
 
+## Upgrading from 2.2.x to 2.3.0
+
+Version 2.3.0 introduces two new optional modules — a public **Features** voting board and an **uptime / SSL Monitoring** module — plus a redesigned public portal and quality-of-life improvements to file uploads and the installer. There are no schema-breaking changes; follow the standard [Upgrading Within 2.x](#upgrading-within-2-x) steps.
+
+### What's new
+
+- **Features** — public roadmap board with voting, comments, status tracking, view analytics, and email notifications. See [Features](/features).
+- **Monitoring** — uptime and SSL monitoring for HTTP/HTTPS endpoints, with response-time charts, sparklines, SSL expiry alerts, and SSRF protection. See [Monitoring](/monitoring).
+- **Portal redesign** — public quote, invoice, purchase-order, and feature pages rebuilt on Tailwind v4 + DaisyUI v5 + MaryUI with a top navbar, theme toggle, and toast notifications. See [Portal](/portal).
+- **File-upload improvements** — drag-and-drop dropzone, upload progress bar, deferred upload, and per-component max-size / allowed-types validation.
+- **Installer module selection** — `laravelcrm:install` now prompts which modules to enable, or accepts `--modules=all` / `--modules=leads,deals,...` for non-interactive installs.
+
+### Enabling the new modules
+
+The new modules are added to the `modules` array in the published config file. When you run `laravelcrm:update` the migrations for `crm_features*`, `crm_monitors`, and `crm_monitor_checks` will be applied.
+
+To enable them, ensure the following entries exist in `config/laravel-crm.php`:
+
+```php
+'modules' => [
+    // ... existing modules
+    'features',
+    'monitoring',
+],
+```
+
+Optional environment variables (all have sensible defaults):
+
+```env
+# Features
+LARAVEL_CRM_FEATURES_VIEW_DEDUP_MINUTES=60
+LARAVEL_CRM_PORTAL_ALLOW_REGISTRATION=false
+
+# Monitoring
+LARAVEL_CRM_MONITORING_DEFAULT_FREQUENCY_MINUTES=5
+LARAVEL_CRM_MONITORING_DEFAULT_SSL_DAYS_BEFORE_EXPIRY_ALERT=14
+LARAVEL_CRM_MONITORING_REQUEST_TIMEOUT_SECONDS=15
+LARAVEL_CRM_MONITORING_SSL_RECHECK_HOURS=12
+LARAVEL_CRM_MONITORING_ALLOW_PRIVATE_TARGETS=false
+```
+
+If you use the Monitoring module, make sure Laravel's scheduler is running (`* * * * * php artisan schedule:run`) so monitor checks fire on their configured intervals.
+
+### Breaking changes
+
+None. PHP 8.2+ and Laravel 11+ requirements introduced in 2.2.0 are unchanged.
+
 ## Upgrading from 2.1.x to 2.2.0
 
 Version 2.2.0 introduces a JSON REST API and adds page titles throughout the UI. There are no schema-breaking changes — follow the standard [Upgrading Within 2.x](#upgrading-within-2-x) steps.
