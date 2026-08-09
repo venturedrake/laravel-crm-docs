@@ -6,8 +6,8 @@
 
 Organisations represent companies or business entities. An organisation can have multiple [People](/people) associated with it, and can be linked to [Leads](/leads), [Deals](/deals), [Orders](/orders), and other entities. The organisation name supports optional encryption for privacy.
 
-**Model:** `VentureDrake\LaravelCrm\Models\Organisation`
-**Table:** `{prefix}organisations` (default: `crm_organisations`)
+**Model:** `VentureDrake\LaravelCrm\Models\Organization`
+**Table:** `{prefix}organizations` (default: `crm_organizations`)
 
 ## Attributes
 
@@ -19,7 +19,7 @@ Organisations represent companies or business entities. An organisation can have
 | `annual_revenue` | `integer` | Annual revenue (stored in cents) |
 | `total_money_raised` | `integer` | Total funding raised (stored in cents) |
 | `number_of_employees` | `integer` | Employee count |
-| `organisation_type_id` | `integer` | Organisation type |
+| `organization_type_id` | `integer` | Organisation type |
 | `timezone_id` | `integer` | Timezone |
 | `user_owner_id` | `integer` | Owner user |
 
@@ -37,7 +37,7 @@ Organisations represent companies or business entities. An organisation can have
 | `labels()` | `morphToMany` | `Label` | Labels/tags |
 | `contacts()` | `morphMany` | `Contact` | Contact records |
 | `client()` | `morphOne` | `Client` | Client record |
-| `organisationType()` | `belongsTo` | `OrganisationType` | Type classification |
+| `organizationType()` | `belongsTo` | `OrganizationType` | Type classification |
 | `timezone()` | `belongsTo` | `Timezone` | Timezone |
 | `ownerUser()` | `belongsTo` | `User` | Owner |
 
@@ -54,9 +54,9 @@ Organisations represent companies or business entities. An organisation can have
 ## Creating an Organisation
 
 ```php
-use VentureDrake\LaravelCrm\Models\Organisation;
+use VentureDrake\LaravelCrm\Models\Organization;
 
-$org = Organisation::create([
+$org = Organization::create([
     'name' => 'Acme Corp',
     'description' => 'Software company',
     'annual_revenue' => 1000000, // Stored in cents

@@ -49,7 +49,13 @@ See [API overview](/api) for authentication, headers, pagination, sorting, conve
 
 Accepted on `POST` / `PUT`:
 
-`reference`, `description`, `currency`, `terms`, `subtotal`, `discount`, `tax`, `adjustments`, `total`, `person_id` (UUID), `organization_id` (UUID), `quote_id` (UUID), `user_owner_id` (int), `labels[]` (UUIDs), `line_items[]`.
+`reference`, `description`, `currency`, `terms`, `discount`, `tax`, `adjustments`, `person_id` (UUID), `organization_id` (UUID), `user_owner_id` (int), `labels[]` (UUIDs), `line_items[]`.
+
+Accepted on `POST` only — the source links are set at creation and cannot be re-pointed:
+
+`lead_id` (UUID), `deal_id` (UUID), `quote_id` (UUID).
+
+> **Important:** `subtotal` and `total` are **not** writable. Both are computed from `line_items`, `discount`, `tax` and `adjustments`, and sending either is a `422`. They are still returned in the response shape above. `discount` and `tax` reject negative values — see [API → Conventions](/api#conventions).
 
 ## Nested line items
 

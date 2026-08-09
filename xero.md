@@ -109,7 +109,7 @@ The integration uses intermediate models to track the mapping between CRM record
 
 | CRM Model | Xero Model | Xero ID Field | Description |
 |---|---|---|---|
-| `Organisation` | `XeroContact` | `contact_id` | Maps organisations to Xero contacts |
+| `Organization` | `XeroContact` | `contact_id` | Maps organisations to Xero contacts |
 | `Person` | `XeroPerson` | `contact_id` | Maps people to Xero contacts |
 | `Product` | `XeroItem` | `item_id` | Maps products to Xero items |
 | `Invoice` | `XeroInvoice` | `invoice_id` | Maps invoices to Xero invoices |

@@ -4,7 +4,7 @@
 
 ## Introduction
 
-Laravel CRM 2.x ships with a complete, ready-to-use web interface built with Tailwind CSS v4, DaisyUI v5, MaryUI, and Livewire 3. The UI provides full CRUD management for all CRM entities, a Kanban-style pipeline board, global search, activity tracking, and role-based navigation — all accessible at `/crm` in your application.
+Laravel CRM 2.x ships with a complete, ready-to-use web interface built with Tailwind CSS v4, DaisyUI v5, MaryUI, and Livewire 3 or 4. The UI provides full CRUD management for all CRM entities, a Kanban-style pipeline board, global search, activity tracking, and role-based navigation — all accessible at `/crm` in your application.
 
 ## Accessing the CRM
 
@@ -15,7 +15,8 @@ Once installed, navigate to `http://<yoursite>/crm`. If you are not authenticate
 The CRM interface uses a responsive layout with sidebar navigation:
 
 - **Sidebar** — Contains the main navigation menu, organized into logical sections. Navigation items are permission-gated, so users only see what they have access to.
-- **Content Area** — The main content area where pages are rendered. Most pages follow a consistent card-based layout.
+- **Header** — Theme toggle, the user menu, and — when [teams](/teams) are enabled — a **team switcher** dropdown listing the tenants the signed-in user belongs to, with a check against the current one and a **+ New enterprise** item.
+- **Content Area** — The main content area where pages are rendered. Most pages follow a consistent card-based layout. A [system-check banner](/updates#system-check-banner) sits above it when the install needs attention.
 
 ## Navigation
 
@@ -46,18 +47,23 @@ The sidebar navigation is organized into the following sections:
 - **Purchase Orders** — Manage supplier purchase orders.
 
 ### Contacts
-- **Clients** — Manage client records that link people and organisations.
-- **Organisations** — Company/organisation directory.
 - **People** — Individual contact directory.
-- **Users** — CRM user management and invitations.
-- **Teams** — Team management (when enabled).
+- **Organisations** — Company/organisation directory.
+- **Users** — CRM user management and [invitations](/users#invitations).
+- **Teams** — CRM user teams (when the `teams` module is enabled).
+
+### Feedback & Monitoring
+- **Features** — Public feature-request and voting board, with a shareable roadmap link. See [Features](/features).
+- **Monitors** — Uptime and SSL monitoring for HTTP/HTTPS endpoints. See [Monitoring](/monitoring).
 
 ### Catalogue
 - **Products** — Product catalogue with search and autocomplete.
 
 ### Administration
-- **Settings** — CRM configuration, integrations (Xero, ClickSend), pipelines, pipeline stages, labels, lead sources, custom fields, custom field groups, tax rates, product attributes, product categories, chat widgets, and permissions.
-- **Updates** — Check for package updates.
+- **Settings** — General settings, [PDF templates](/pdf-templates), roles and permissions, pipelines, pipeline stages, product categories, tax rates, labels, lead sources, custom fields, custom field groups, chat widgets, and integrations (Xero, ClickSend).
+- **Updates** — Installed version, available updates, and the commands to run. See [Updates](/updates).
+
+> **Note:** [Customers](/customers) have full CRUD routes under `/crm/customers` but no sidebar item in the rebuilt 2.x navigation — reach them by URL or from a linked person or organisation. The underlying model is named `Client`; the routes, permissions and UI all say *Customers*.
 
 ## Common UI Patterns
 
@@ -90,7 +96,8 @@ Each entity's detail page typically shows:
 Create and edit forms use a consistent card-based layout with:
 
 - **Autocomplete Fields** — People, organisations, and products use autocomplete for quick selection.
-- **Dynamic Product Lines** — Deals, quotes, orders, and invoices support adding multiple product line items with quantity, price, tax rate, and subtotal calculations.
+- **Dynamic Product Lines** — Deals, quotes, orders, invoices, deliveries, and purchase orders support adding multiple product line items with quantity, price, tax rate, and subtotal calculations. Quantities accept up to three decimal places.
+- **PDF Template Picker** — Quote, order, invoice, delivery, and purchase-order forms carry a **PDF template** select pinning one of the five shipped layouts to that record, or leaving it to follow the Settings default. See [PDF Templates](/pdf-templates).
 - **Address Fields** — Structured address input with multiple address support.
 - **Email & Phone Fields** — Multiple email addresses and phone numbers with type selection (work, home, etc.).
 - **Label Selection** — Tag records with colour-coded labels.
@@ -98,11 +105,13 @@ Create and edit forms use a consistent card-based layout with:
 
 ### PDF Documents
 
-Quotes, orders, invoices, and deliveries can generate downloadable PDF documents via `barryvdh/laravel-dompdf`.
+Quotes, orders, invoices, deliveries, and purchase orders generate downloadable PDF documents via `barryvdh/laravel-dompdf`, rendered through one of five pickable layouts. See [PDF Templates](/pdf-templates).
 
 ### Portal Pages
 
-Quotes and invoices have public-facing portal pages accessible via unique external URLs (`/p/quotes/{external_id}` and `/p/invoices/{external_id}`). These allow recipients to view, accept, or reject quotes and view invoices without needing a CRM login.
+Quotes, invoices, and purchase orders have public-facing portal pages at unique external URLs (`/p/quotes/{external_id}`, `/p/invoices/{external_id}`, `/p/purchase-orders/{external_id}`). These allow recipients to view, accept, or reject a quote, view an invoice, or respond to a purchase order without needing a CRM login.
+
+The public **feature board** lives on the same portal at `/p/features`, with a per-team board at `/p/features/team/{id}` on a multi-tenant install. See [Portal](/portal).
 
 ### Toast Notifications
 

@@ -14,7 +14,7 @@ Customers (internally called "Clients") represent the polymorphic bridge between
 | Attribute | Type | Description |
 |---|---|---|
 | `external_id` | `string` | UUID used in URLs (auto-generated) |
-| `clientable_type` | `string` | Polymorphic type (`Person` or `Organisation`) |
+| `clientable_type` | `string` | Polymorphic type (`Person` or `Organization`) |
 | `clientable_id` | `integer` | Polymorphic ID |
 
 ## Computed Attributes
@@ -31,7 +31,7 @@ $client->name; // "John Smith" or "Acme Corp"
 
 | Method | Type | Related Model | Description |
 |---|---|---|---|
-| `clientable()` | `morphTo` | `Person\|Organisation` | The underlying entity |
+| `clientable()` | `morphTo` | `Person\|Organization` | The underlying entity |
 
 ## Polymorphic Usage
 
@@ -42,7 +42,7 @@ A Person or Organisation becomes a customer via their `client()` relationship:
 $client = $person->client()->create();
 
 // Create a client from an organisation
-$client = $organisation->client()->create();
+$client = $organization->client()->create();
 
 // Access the underlying entity
 $client->clientable; // Returns Person or Organisation instance

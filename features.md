@@ -17,8 +17,13 @@ The module is enabled via the `features` entry in the [`modules`](/configuration
 | Admin show | `/crm/features/{external_id}` | Detail view with charts, voters, and comments |
 | Admin create / edit | `/crm/features/create`, `/crm/features/{external_id}/edit` | CRUD forms |
 | Public board | `/p/features` | Public roadmap visible to portal users |
+| Public team board | `/p/features/team/{team_id}` | The same board addressed by team — the shareable link on a multi-tenant install |
 | Public show | `/p/features/{external_id}` | Public detail with vote and comment |
 | Public submit | `/p/features/submit` | Anyone signed in to the portal can suggest a feature |
+
+The admin index carries a **Public board** button linking to the shareable board. On a [teams](/teams) install the link is team-scoped, so an admin copies a URL that works for someone with no account and no session. See [Portal → Portal Teams](/portal#portal-teams) for how a bare `/p/features` resolves which board to show.
+
+> **Note:** Every team gets its own board. `LARAVEL_CRM_PORTAL_TEAM_ID` is optional — set it only to pin the portal to a single team and 404 everything outside it. A feature submitted through the portal is stamped with the **board's** team, not the submitter's, because a visitor who registered through `/p/register` holds no host-app team.
 
 ## Models
 
@@ -91,6 +96,8 @@ The package seeds five default statuses on install:
 
 Manage these under **Settings → Features → Statuses**.
 
+> **Note:** A status cannot be deleted while features still point at it — the delete is refused with a message rather than orphaning them on the board. Re-assign those features first. Clearing the "default status" flag is scoped to the current team, so marking a default on one team no longer unsets every other team's.
+
 ## Voting
 
 Each user (CRM user or portal user) can cast at most one vote per feature, enforced by a `unique(feature_id, user_id)` constraint on the `feature_votes` pivot. Voting is exposed on:
@@ -156,10 +163,10 @@ Recipient resolution is centralised in the `ResolvesFeatureRecipients` trait so 
 
 The package seeds the following permissions for the Features module:
 
-- `view features`
-- `create features`
-- `edit features`
-- `delete features`
-- `manage feature statuses`
+- `view crm features`
+- `create crm features`
+- `edit crm features`
+- `delete crm features`
+- `manage crm feature statuses`
 
-These are wired up in `FeaturePolicy`.
+These are wired up in `FeaturePolicy`. Manager and Employee both hold the quad; only Manager holds `manage crm feature statuses`. See [Roles](/roles) and [Permissions](/permissions).

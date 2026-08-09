@@ -21,7 +21,7 @@ People represent individual contacts in the CRM. A person can belong to an [Orga
 | `maiden_name` | `string` | Maiden name — encryptable |
 | `birthday` | `date` | Date of birth |
 | `description` | `text` | Notes |
-| `organisation_id` | `integer` | Parent organisation |
+| `organization_id` | `integer` | Parent organisation |
 | `user_owner_id` | `integer` | Owner user |
 
 > **Note:** Fields marked "encryptable" are encrypted at rest when `encrypt_db_fields` is enabled in the [configuration](/configuration).
@@ -40,7 +40,7 @@ $person->name; // "John Smith"
 
 | Method | Type | Related Model | Description |
 |---|---|---|---|
-| `organisation()` | `belongsTo` | `Organisation` | Parent organisation |
+| `organization()` | `belongsTo` | `Organization` | Parent organisation |
 | `deals()` | `hasMany` | `Deal` | Associated deals |
 | `emails()` | `morphMany` | `Email` | Email addresses |
 | `phones()` | `morphMany` | `Phone` | Phone numbers |
@@ -66,7 +66,7 @@ use VentureDrake\LaravelCrm\Models\Person;
 $person = Person::create([
     'first_name' => 'John',
     'last_name' => 'Smith',
-    'organisation_id' => $organisation->id,
+    'organization_id' => $organization->id,
     'user_owner_id' => auth()->id(),
 ]);
 

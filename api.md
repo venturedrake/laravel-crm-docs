@@ -107,6 +107,8 @@ php artisan laravel-crm:api-token user@example.com --name="Mobile App"
 
 The plaintext token is printed once. The command exits non-zero if the user does not exist or lacks `crm_access`.
 
+> **Note:** `laravel-crm:api-token` is hyphenated. It is the one exception — every other artisan command this package ships is namespaced `laravelcrm:` with no hyphen (`laravelcrm:install`, `laravelcrm:update`, `laravelcrm:upgrade`). This is not a typo in the docs.
+
 ### Making authenticated requests
 
 Pass the token in the `Authorization` header:
@@ -154,11 +156,12 @@ Returns `204 No Content` and deletes the personal access token used to authentic
 
 ### Multi-tenancy notes
 
-When the host app runs in teams mode (`config('laravel-crm.teams', true)`):
+When the host app runs in teams mode (`config('laravel-crm.teams', false)` — teams are **off** by default):
 
 - Without `X-Team-ID`, requests are scoped to the user's `current_team_id`.
 - With `X-Team-ID`, list / store / update / delete endpoints run in the context of that team.
 - `GET /{resource}/{uuid}` resolves the route-bound model using the user's **default** current team, because Laravel's `SubstituteBindings` middleware runs before the team-context middleware. Use the list endpoints (filtered by `X-Team-ID`) to discover the correct UUIDs for the active team.
+- **A token whose user has no current team cannot reference anything.** Every foreign key on a write whose table is team-scoped — `person_id`, `organization_id`, `pipeline_stage_id`, `labels[]`, `line_items.*.product_id`, and the rest — is validated against the active team. When teams are on and the token's user has no `currentTeam`, and none was supplied via `X-Team-ID`, the rule matches nothing rather than falling back to unscoped, so **every** such id comes back `422` at once. It presents as "all my ids are suddenly invalid". The fix is on the user record, not the payload: give the user a current team, or send `X-Team-ID`. Service accounts created outside the host app's normal registration flow are the usual cause.
 
 ## Endpoint summary
 
@@ -206,6 +209,9 @@ All entity endpoints follow the same RESTful shape:
 - **Pagination:** `?per_page=N` (1–100, default 25). Responses use Laravel's standard pagination envelope (`data`, `meta`, `links`).
 - **Sorting:** `?sort=field` ascending; `?sort=-field` descending. Unknown columns are silently ignored. Default sort is `-created_at`.
 - **Soft deletes:** `DELETE` returns `204` and soft-deletes the row. Subsequent `GET`s return `404`.
+- **`subtotal` and `total` are computed and rejected on input.** On quotes and orders both are derived from `line_items`, `discount`, `tax` and `adjustments`; on invoices, which carry no `discount` or `adjustments` field, from `line_items` and `tax`. Sending either on a `POST` or `PUT` is a `422` naming the cause, rather than being silently ignored and recomputed. An absent or `null` value passes, so a payload that never sent them is unaffected. Both are still returned in responses.
+- **`discount` and `tax` reject negatives.** `tax` carries `min:0` on quote / order / invoice writes; `discount` carries it on quote / order writes, invoices having no such field. A negative discount was a way to inflate a total past the sum of the line items; on a quote or order, send a negative `adjustments` value instead.
+- **Referenced ids must belong to the active team.** Every UUID reference on a write is checked against the request's team as well as the table. An id belonging to another team is a `422` on that field, where it previously validated and produced a cross-team record. Single-tenant installs (`laravel-crm.teams = false`) are unaffected — the check is skipped entirely — as are package-wide lookup tables that carry no `team_id` column, which are still checked against the table alone.
 
 ## Errors
 
@@ -259,6 +265,26 @@ The API enforces a single named rate limiter, `laravel-crm-api`:
 | Unauthenticated | **30 requests / minute / IP** |
 
 Exceeding the limit returns `429 Too Many Requests` with `Retry-After` in seconds.
+
+### `POST /auth/token` is throttled twice
+
+On top of the per-IP limit above, token issuing carries a fixed `throttle:6,1` (6 attempts / minute / IP) **and** a per-account counter on failed attempts, so credential stuffing spread across many IPs against one email address does not get unlimited attempts.
+
+| Setting | Default | Environment Variable |
+|---|---|---|
+| `laravel-crm.api.token_attempts_per_account` | `5` | `LARAVEL_CRM_API_TOKEN_ATTEMPTS_PER_ACCOUNT` |
+| `laravel-crm.api.token_attempts_decay_seconds` | `600` | `LARAVEL_CRM_API_TOKEN_ATTEMPTS_DECAY_SECONDS` |
+
+The per-account counter is keyed on the submitted email, incremented only on a failed attempt, and cleared on success. Once it trips, the endpoint returns `429` with the error under `errors.email` rather than the usual `429` envelope:
+
+```json
+{
+  "message": "Too many login attempts. Try again in 540 seconds.",
+  "errors": { "email": ["Too many login attempts. Try again in 540 seconds."] }
+}
+```
+
+> **Important:** `POST /auth/token` could not return `429` before 2.4.0. A client that re-issues a token on every request, or retries on failure without backing off, will start seeing it — issue a token once and reuse it, and back off on `429`. Both limits key on IP or email, so one misbehaving integration can lock out a shared address; raise the two config keys if your deployment legitimately issues tokens in bursts. See [Configuration → API](/configuration#api).
 
 ## Worked example
 

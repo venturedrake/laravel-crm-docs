@@ -4,6 +4,7 @@
 - [Installation](/installation)
 - [Configuration](/configuration)
 - [Upgrade Guide](/upgrading)
+- [Updates](/updates)
 - [Security](/security)
 - [Contributing](/contributing)
 
@@ -34,6 +35,7 @@
 - [Notes](/notes)
 - [Orders](/orders)
 - [Organisations](/organizations)
+- [PDF Templates](/pdf-templates)
 - [People](/people)
 - [Permissions](/permissions)
 - [Pipelines](/pipelines)

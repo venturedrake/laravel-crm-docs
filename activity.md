@@ -39,6 +39,12 @@ Activities are automatically created by models that use the `HasCrmActivities` t
 $lead->activities; // All activities on a lead's timeline
 ```
 
+## Permissions
+
+The `activities/*` route group is gated by `ActivityPolicy`, which maps onto the `create` / `view` / `edit` / `delete crm activities` permissions.
+
+> **Note:** This group previously shipped with no gate at all — any user who could reach the CRM could hit every route under `/crm/activities` regardless of role. `ActivityPolicy` is new in 2.4.0. Manager and Employee both hold the full quad, so no stock role loses access. See [Permissions](/permissions) and the [Upgrade Guide](/upgrading#breaking-changes).
+
 ## Activity Types
 
 The CRM tracks various activity types through dedicated Livewire components:

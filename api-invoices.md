@@ -51,7 +51,15 @@ See [API overview](/api) for authentication, headers, pagination, sorting, conve
 
 Accepted on `POST` / `PUT`:
 
-`reference`, `issue_date`, `due_date`, `currency`, `terms`, `subtotal`, `tax`, `total`, `person_id` (UUID), `organization_id` (UUID), `order_id` (UUID), `user_owner_id` (int), `labels[]` (UUIDs), `line_items[]`.
+`reference`, `issue_date`, `due_date`, `currency`, `terms`, `tax`, `person_id` (UUID), `organization_id` (UUID), `user_owner_id` (int), `labels[]` (UUIDs), `line_items[]`.
+
+Accepted on `POST` only — the source order is set at creation and cannot be re-pointed:
+
+`order_id` (UUID).
+
+> **Important:** `subtotal` and `total` are **not** writable. Both are computed from `line_items` and `tax`, and sending either is a `422`. They are still returned in the response shape above. See [API → Conventions](/api#conventions).
+
+> **Note:** Invoices have no `discount` or `adjustments` field — quotes and orders do, invoices do not. That is deliberate, not an omission from this list: `tax` is the only rate-style field an invoice write accepts, and it rejects negative values.
 
 ## Nested line items
 

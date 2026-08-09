@@ -23,7 +23,7 @@ Deals represent qualified business opportunities with an estimated value and exp
 | `closed_at` | `datetime` | Actual close date |
 | `closed_status` | `string` | Won/lost status |
 | `person_id` | `integer` | Associated person |
-| `organisation_id` | `integer` | Associated organisation |
+| `organization_id` | `integer` | Associated organisation |
 | `client_id` | `integer` | Associated client |
 | `user_owner_id` | `integer` | Owner user |
 | `user_assigned_id` | `integer` | Assigned user |
@@ -37,7 +37,7 @@ Deals represent qualified business opportunities with an estimated value and exp
 | Method | Type | Related Model | Description |
 |---|---|---|---|
 | `person()` | `belongsTo` | `Person` | Contact person |
-| `organisation()` | `belongsTo` | `Organisation` | Organisation |
+| `organization()` | `belongsTo` | `Organization` | Organisation |
 | `client()` | `belongsTo` | `Client` | Client |
 | `dealProducts()` | `hasMany` | `DealProduct` | Line items |
 | `pipeline()` | `belongsTo` | `Pipeline` | Pipeline |
@@ -58,7 +58,7 @@ $deal = Deal::create([
     'currency' => 'USD',
     'expected_close' => '2026-06-30',
     'person_id' => $person->id,
-    'organisation_id' => $organisation->id,
+    'organization_id' => $organization->id,
     'user_owner_id' => auth()->id(),
 ]);
 ```

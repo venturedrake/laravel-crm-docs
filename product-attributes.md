@@ -44,6 +44,12 @@ $variation->productPrices()->create([
 ]);
 ```
 
+## Permissions
+
+The `product-attributes` routes are gated by `ProductAttributePolicy`, which maps onto the `create` / `view` / `edit` / `delete crm product attributes` permissions.
+
+> **Note:** These routes returned `403` for **every** user, Owner included, before 2.4.0. The route parameter was named `{productCategory}` while the `can:` guard read `productAttribute`, so the gate was handed `null` and resolved no policy — and `ProductAttributePolicy` existed but was never registered, so the check fell through to deny anyway. Both are fixed. Neither Manager nor Employee holds `crm product attributes` under the stock roles; see [Roles](/roles).
+
 ## Traits
 
 | Trait | Description |

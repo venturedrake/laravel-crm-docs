@@ -26,7 +26,7 @@ Invoices represent billing documents generated from [Orders](/orders). An invoic
 | `due_date` | `datetime` | Payment due date |
 | `fully_paid_at` | `datetime` | Date fully paid |
 | `person_id` | `integer` | Contact person |
-| `organisation_id` | `integer` | Organisation |
+| `organization_id` | `integer` | Organisation |
 | `order_id` | `integer` | Source order |
 | `user_owner_id` | `integer` | Owner user |
 | `user_assigned_id` | `integer` | Assigned user |
@@ -48,7 +48,7 @@ $invoice->title; // "$1,500.00 - Acme Corp"
 | Method | Type | Related Model | Description |
 |---|---|---|---|
 | `person()` | `belongsTo` | `Person` | Contact person |
-| `organisation()` | `belongsTo` | `Organisation` | Organisation |
+| `organization()` | `belongsTo` | `Organization` | Organisation |
 | `order()` | `belongsTo` | `Order` | Source order |
 | `invoiceLines()` | `hasMany` | `InvoiceLine` | Line items |
 | `labels()` | `morphToMany` | `Label` | Labels/tags |
@@ -61,9 +61,38 @@ $invoice->title; // "$1,500.00 - Acme Corp"
 
 Invoices have a public-facing portal page accessible at `/p/invoices/{external_id}`. This allows recipients to view invoices without needing a CRM login.
 
+## Line Items
+
+**Model:** `VentureDrake\LaravelCrm\Models\InvoiceLine`
+**Table:** `{prefix}invoice_lines` (default: `crm_invoice_lines`)
+
+Reached from the invoice via `invoiceLines()`.
+
+| Attribute | Type | Description |
+|---|---|---|
+| `external_id` | `string` | UUID used by the [API](/api-quotes#nested-line-items) |
+| `product_id` | `integer` | The product being invoiced |
+| `product_variation_id` | `integer` | Optional [product variation](/product-attributes) |
+| `description` | `text` | Optional line description |
+| `quantity` | `decimal(15,3)` | Quantity, to at most 3 decimal places |
+| `price` | `integer` | Unit price (stored in cents) |
+| `tax_rate` | `decimal` | Tax rate percentage applied to the line |
+| `tax_amount` | `integer` | Tax on the line (stored in cents) |
+| `amount` | `integer` | Line total (stored in cents) |
+| `currency` | `string(3)` | Currency code |
+| `comments` | `string` | Optional per-line note |
+
+> **Note:** `quantity` is `decimal(15,3)`, so an invoice line can carry `3.5` Kg or `0.25` L. The `HasDecimalQuantity` trait casts it, which means `$line->quantity` reads back as a PHP `float`.
+
+When an invoice is raised from an [Order](/orders#drawing-down-an-order-line), the quantity is capped at the order line's outstanding remainder, recomputed server-side from the invoices already raised against it.
+
 ## PDF Generation
 
-Invoices can be exported as PDF documents using `barryvdh/laravel-dompdf`.
+Invoices are exported as PDF documents through `barryvdh/laravel-dompdf`, rendered with one of the five shipped [PDF Templates](/pdf-templates).
+
+The template is resolved per record: the invoice's own `pdf_template` column when set, otherwise the default chosen for **invoice** under **Settings → Templates**, otherwise a PDF view the host has published and customised, otherwise `modern`. A **PDF template** select on the invoice create and edit form pins a template to the record; leaving it blank follows the Settings default.
+
+Downloads, the emailed attachment and the [portal](/portal) render all resolve the same way, so all three agree.
 
 ## Creating an Invoice
 
@@ -79,7 +108,7 @@ $invoice = Invoice::create([
     'due_date' => '2026-02-15',
     'order_id' => $order->id,
     'person_id' => $person->id,
-    'organisation_id' => $organisation->id,
+    'organization_id' => $organization->id,
     'user_owner_id' => auth()->id(),
 ]);
 ```

@@ -24,7 +24,7 @@ Labels provide a tagging system for categorising CRM entities. Labels use a poly
 | `leads()` | `morphedByMany` | `Lead` | Leads with this label |
 | `deals()` | `morphedByMany` | `Deal` | Deals with this label |
 | `people()` | `morphedByMany` | `Person` | People with this label |
-| `organisations()` | `morphedByMany` | `Organisation` | Organisations with this label |
+| `organizations()` | `morphedByMany` | `Organization` | Organisations with this label |
 
 ## Usage
 

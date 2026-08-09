@@ -23,7 +23,7 @@ Leads represent potential business opportunities that have not yet been qualifie
 | `lead_status_id` | `integer` | Foreign key to lead status |
 | `lead_source_id` | `integer` | Foreign key to lead source |
 | `person_id` | `integer` | Associated person |
-| `organisation_id` | `integer` | Associated organisation |
+| `organization_id` | `integer` | Associated organisation |
 | `client_id` | `integer` | Associated client |
 | `user_owner_id` | `integer` | Owner user |
 | `user_assigned_id` | `integer` | Assigned user |
@@ -37,7 +37,7 @@ Leads represent potential business opportunities that have not yet been qualifie
 | Method | Type | Related Model | Description |
 |---|---|---|---|
 | `person()` | `belongsTo` | `Person` | Associated contact person |
-| `organisation()` | `belongsTo` | `Organisation` | Associated organisation |
+| `organization()` | `belongsTo` | `Organization` | Associated organisation |
 | `client()` | `belongsTo` | `Client` | Associated client |
 | `leadStatus()` | `belongsTo` | `LeadStatus` | Current status |
 | `leadSource()` | `belongsTo` | `LeadSource` | Source of the lead |
@@ -90,7 +90,7 @@ $lead = Lead::create([
     'currency' => 'USD',
     'description' => 'Potential website redesign project',
     'person_id' => $person->id,
-    'organisation_id' => $organisation->id,
+    'organization_id' => $organization->id,
     'lead_source_id' => $source->id,
     'user_owner_id' => auth()->id(),
 ]);

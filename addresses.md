@@ -37,7 +37,7 @@ Addresses are accessed through the parent model's `addresses()` relationship:
 
 ```php
 // Add an address to an organisation
-$organisation->addresses()->create([
+$organization->addresses()->create([
     'line1' => '123 Main St',
     'city' => 'New York',
     'state' => 'NY',
@@ -47,11 +47,11 @@ $organisation->addresses()->create([
 ]);
 
 // Get primary address
-$address = $organisation->getPrimaryAddress();
+$address = $organization->getPrimaryAddress();
 
 // Get billing/shipping addresses
-$billing = $organisation->getBillingAddress();   // address_type_id = 5
-$shipping = $organisation->getShippingAddress(); // address_type_id = 6
+$billing = $organization->getBillingAddress();   // address_type_id = 5
+$shipping = $organization->getShippingAddress(); // address_type_id = 6
 ```
 
 ## Seeding Address Types

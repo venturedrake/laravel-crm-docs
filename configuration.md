@@ -30,7 +30,21 @@ Enable multi-tenant support using Laravel Jetstream or Spark teams. Each team ac
 
 > **Important:** Only enable this if you are using Jetstream or Spark teams. Enabling without the feature installed will break your installation. This requires Spatie Permissions v5+ with teams support enabled. See the [Spatie docs](https://spatie.be/docs/laravel-permission/v5/basic-usage/teams-permissions) for setup.
 
-> **Note:** This is unrelated to the user teams feature within the CRM itself, which is simply a way of grouping users.
+> **Note:** This key is about **host-application teams** — the Jetstream or Spark tenant a user is currently switched to. It is unrelated to the CRM's own `teams` module (`crm_teams`), which groups users inside a single tenant. See [Teams](/teams) for how the two differ.
+
+## Host Team Model
+
+The Eloquent model in the host application that represents a team a user can switch to — typically Jetstream's or a starter kit's `App\Models\Team`. When set, the **+ New enterprise** link in the CRM header uses this model to create the team and switches the user's current team to it.
+
+```php
+'host_team_model' => env('LARAVEL_CRM_HOST_TEAM_MODEL'),
+```
+
+| Environment Variable | Default | Description |
+|---|---|---|
+| `LARAVEL_CRM_HOST_TEAM_MODEL` | `null` | Fully-qualified host team model. Leave unset to auto-detect via the user's `ownedTeams()` relationship |
+
+> **Tip:** Set this if your host application's own `teams.create` route sits behind middleware the CRM cannot satisfy — Jetstream's `hasNoTeam`, for instance. See [Teams → Creating a Team from the CRM](/teams#creating-a-team-from-the-crm).
 
 ## Default Settings
 
@@ -184,6 +198,7 @@ Defaults for the [Monitoring](/monitoring) module. These are used by `MonitorSer
     'default_ssl_days_before_expiry_alert' => env('LARAVEL_CRM_MONITORING_DEFAULT_SSL_DAYS_BEFORE_EXPIRY_ALERT', 14),
     'request_timeout_seconds' => env('LARAVEL_CRM_MONITORING_REQUEST_TIMEOUT_SECONDS', 15),
     'ssl_recheck_hours' => env('LARAVEL_CRM_MONITORING_SSL_RECHECK_HOURS', 12),
+    'max_response_bytes' => env('LARAVEL_CRM_MONITORING_MAX_RESPONSE_BYTES', 5 * 1024 * 1024),
     'allow_private_targets' => env('LARAVEL_CRM_MONITORING_ALLOW_PRIVATE_TARGETS', false),
 ],
 ```
@@ -192,9 +207,23 @@ Defaults for the [Monitoring](/monitoring) module. These are used by `MonitorSer
 |---|---|---|
 | `LARAVEL_CRM_MONITORING_DEFAULT_FREQUENCY_MINUTES` | `5` | Default check frequency for new monitors (minutes) |
 | `LARAVEL_CRM_MONITORING_DEFAULT_SSL_DAYS_BEFORE_EXPIRY_ALERT` | `14` | Days before SSL expiry to trigger an alert |
-| `LARAVEL_CRM_MONITORING_REQUEST_TIMEOUT_SECONDS` | `15` | Default HTTP request timeout (seconds) |
+| `LARAVEL_CRM_MONITORING_REQUEST_TIMEOUT_SECONDS` | `15` | HTTP request timeout used by the check service (seconds) |
 | `LARAVEL_CRM_MONITORING_SSL_RECHECK_HOURS` | `12` | How often to re-check SSL certificates |
+| `LARAVEL_CRM_MONITORING_MAX_RESPONSE_BYTES` | `5242880` (5 MiB) | Cap on the response body a check will read, so a monitored endpoint streaming an unbounded response cannot exhaust the queue worker's memory |
 | `LARAVEL_CRM_MONITORING_ALLOW_PRIVATE_TARGETS` | `false` | Allow monitors to target private/loopback IPs (off by default to prevent SSRF) |
+
+> **Note:** `max_response_bytes` ships as 5 MiB in the config file, but `MonitorCheckService` falls back to **2 MiB** when the key is absent. An install with a published `config/laravel-crm.php` written before 2.4.0 therefore gets 2 MiB until the key is added. Add it explicitly if the value matters to you.
+
+Four further monitoring keys are **read by the code but absent from the shipped config file**. They fall back to the defaults below; add them to your published config to change them.
+
+| Key | Default | Description |
+|---|---|---|
+| `monitoring.perf_alert_rate_limit_minutes` | `60` | Minimum gap between slow-response alerts for one monitor |
+| `monitoring.recovered_alert_rate_limit_minutes` | `60` | Minimum gap between recovery alerts for one monitor |
+| `monitoring.down_debounce_minutes` | `2` | How long an endpoint must stay down before a downtime alert fires |
+| `monitoring.ssl_alert_rate_limit_hours` | `24` | Minimum gap between SSL expiry alerts for one monitor |
+
+See [Monitoring → Alert Rate Limiting](/monitoring#alert-rate-limiting).
 
 ## Portal
 
@@ -202,15 +231,37 @@ Settings for the public-facing [Portal](/portal) (feature board, signed quote/in
 
 ```php
 'portal' => [
+    'team_id' => env('LARAVEL_CRM_PORTAL_TEAM_ID'),
     'allow_registration' => env('LARAVEL_CRM_PORTAL_ALLOW_REGISTRATION', false),
 ],
 ```
 
 | Environment Variable | Default | Description |
 |---|---|---|
+| `LARAVEL_CRM_PORTAL_TEAM_ID` | `null` | Pin the portal to a single team. **Optional** — leave unset to give every team its own board |
 | `LARAVEL_CRM_PORTAL_ALLOW_REGISTRATION` | `false` | Allow visitors to self-register on the portal so they can vote and comment on features |
 
-> **Note:** When enabled, `/p/register` writes rows to the host application's `users` table and dispatches Laravel's `Registered` event for each signup.
+> **Note:** When registration is enabled, `/p/register` writes rows to the host application's `users` table and dispatches Laravel's `Registered` event for each signup.
+
+> **Important:** `portal.team_id` is no longer required. Under multi-tenant teams mode every team has its own board at `/p/features/team/{id}`, and bare `/p/features` resolves the board from the URL, the session, the signed-in user's current team, or — where only one team has a board — that team. Setting it is a hard single-tenant lock that 404s every feature outside that team. It is ignored when teams mode is off. See [Portal → Portal Teams](/portal#portal-teams).
+
+## API
+
+Settings for the [REST API](/api). These two throttle `POST /crm/api/v2/auth/token` per email address, on top of the IP-keyed `throttle:6,1` limiter the route already carries.
+
+```php
+'api' => [
+    'token_attempts_per_account' => env('LARAVEL_CRM_API_TOKEN_ATTEMPTS_PER_ACCOUNT', 5),
+    'token_attempts_decay_seconds' => env('LARAVEL_CRM_API_TOKEN_ATTEMPTS_DECAY_SECONDS', 600),
+],
+```
+
+| Environment Variable | Default | Description |
+|---|---|---|
+| `LARAVEL_CRM_API_TOKEN_ATTEMPTS_PER_ACCOUNT` | `5` | Failed token requests allowed per email address per window |
+| `LARAVEL_CRM_API_TOKEN_ATTEMPTS_DECAY_SECONDS` | `600` | Length of that window, in seconds |
+
+The counter is incremented only on a failed attempt and cleared on success. See [API → Rate limits](/api#rate-limits).
 
 ## Features
 
@@ -237,6 +288,40 @@ Show or hide package update notifications for CRM users.
 | Environment Variable | Default | Description |
 |---|---|---|
 | `LARAVEL_CRM_UPDATE_NOTIFICATIONS` | `true` | Show update notifications |
+
+When this is off, the system-check banner renders nothing and the **Updates** sidebar item is hidden. See [Updates](/updates).
+
+## Documentation URLs
+
+Where the CRM's own in-app links point. Override either if you host your own documentation.
+
+```php
+'docs_url' => env('LARAVEL_CRM_DOCS_URL', 'https://github.com/venturedrake/laravel-crm'),
+
+'upgrade_guide_url' => env('LARAVEL_CRM_UPGRADE_GUIDE_URL', 'https://laravelcrm.com/docs/2.x/upgrading'),
+```
+
+| Environment Variable | Default | Description |
+|---|---|---|
+| `LARAVEL_CRM_DOCS_URL` | `https://github.com/venturedrake/laravel-crm` | Target of the "View version X details" link — release notes |
+| `LARAVEL_CRM_UPGRADE_GUIDE_URL` | `https://laravelcrm.com/docs/2.x/upgrading` | Target of every "Upgrade guide" link — the updates page and the system check banner |
+
+The two are separate because they answer different questions: `docs_url` answers *what is in this release?*, `upgrade_guide_url` answers *how do I install it?*.
+
+## Localisation
+
+The package ships four locale directories under `resources/lang`:
+
+| Locale | Contents |
+|---|---|
+| `en` | The complete key set — every other locale falls back to this one |
+| `en_au` | A small regional override file (≈30 keys): Australian spellings and terms such as *ABN Number* and *postcode* |
+| `en_gb` | The same, for British spellings |
+| `fa` | Persian — a full translation, new in 2.4.0 |
+
+> **Note:** `en_au` and `en_gb` are deliberately partial. They override only the keys whose wording differs regionally and fall through to `en` for everything else, so they need no maintenance when new keys are added.
+>
+> `fa` is a full translation, but it is currently missing the ~62 keys added during the 2.4.0 cycle — the invitation emails, the PDF template picker, the system-check banner and the decimal-quantity validation messages. Those strings render in English for a Persian-locale user until the translation catches up.
 
 ## Models with Global
 
