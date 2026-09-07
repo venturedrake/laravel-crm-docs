@@ -117,6 +117,8 @@ Reached from the order via `orderProducts()`.
 
 > **Note:** `quantity` is `decimal(15,3)`, so an order line can carry `3.5` Kg or `0.25` L. The `HasDecimalQuantity` trait casts it, which means `$line->quantity` reads back as a PHP `float`.
 
+> **Note:** A **soft-deleted product stays readable** on the orders that already reference it. `OrderProduct::product()` resolves `withTrashed()`, so the line keeps its description on the show view, in all 14 PDF templates and in the [Xero](/xero) sync. The product pickers query `Product::` directly, so a deleted product stays out of selection lists. See [Products](/products).
+
 ### Drawing down an order line
 
 The Order → Invoice and Order → Delivery forms let you invoice or deliver part of an order line, and the quantity control is a **bounded number input** rather than a dropdown — a dropdown built by an integer loop cannot express 3.5, so an order line of 2.5 could only ever be invoiced as 2, leaving 0.5 outstanding forever.
@@ -130,6 +132,16 @@ The cap is enforced **server-side**. On submit the remainder is recomputed from 
 Orders are exported as PDF documents through `barryvdh/laravel-dompdf`, rendered with one of the five shipped [PDF Templates](/pdf-templates).
 
 The template is resolved per record: the order's own `pdf_template` column when set, otherwise the default chosen for **order** under **Settings → Templates**, otherwise a PDF view the host has published and customised, otherwise `modern`. A **PDF template** select on the order create and edit form pins a template to the record; leaving it blank follows the Settings default.
+
+The **"From"** contact block on the themed templates is filled from **Settings → General → Document contact details**, or from an order-specific override — see [Settings](/settings#document-contact-details). `classic` renders no From block on orders.
+
+### Preview
+
+A **Preview** action sits beside every download button — on the order show page and on index rows — rendering the real generated PDF in a slide-over with pdf.js, rather than sending you out through the browser's download tray to check a document before sending it.
+
+Route `laravel-crm.orders.preview`, carrying the same `can:view` guard as its download twin, so preview grants nothing download did not. The viewer chunk and its pdf.js worker are imported lazily, so a user who never opens a preview downloads none of it.
+
+> **Note:** Orders have a PDF preview but no portal page, so there is no **Get link** button on them.
 
 ## Creating an Order
 

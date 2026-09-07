@@ -188,6 +188,8 @@ Enable or disable CRM modules based on your business needs. Remove a module from
 
 > **Tip:** If you sell digital products or services, you can remove `deliveries` since it won't be relevant.
 
+The rule is read in two places, and both give the same answer: the `@hasleadsenabled` / `@hasquotesenabled` / … Blade directives, and `VentureDrake\LaravelCrm\Support\Modules` for PHP callers such as the [Settings](/settings) component deciding which tabs to render. Note that an **empty** `modules` array means every module is enabled, not none — "unconfigured" is treated as "everything on", and `[]` is unconfigured.
+
 ## Monitoring
 
 Defaults for the [Monitoring](/monitoring) module. These are used by `MonitorService` when creating monitors without explicit values, and by the `RunMonitorCheck` job when scheduling and evaluating checks.
@@ -231,19 +233,17 @@ Settings for the public-facing [Portal](/portal) (feature board, signed quote/in
 
 ```php
 'portal' => [
-    'team_id' => env('LARAVEL_CRM_PORTAL_TEAM_ID'),
     'allow_registration' => env('LARAVEL_CRM_PORTAL_ALLOW_REGISTRATION', false),
 ],
 ```
 
 | Environment Variable | Default | Description |
 |---|---|---|
-| `LARAVEL_CRM_PORTAL_TEAM_ID` | `null` | Pin the portal to a single team. **Optional** — leave unset to give every team its own board |
 | `LARAVEL_CRM_PORTAL_ALLOW_REGISTRATION` | `false` | Allow visitors to self-register on the portal so they can vote and comment on features |
 
 > **Note:** When registration is enabled, `/p/register` writes rows to the host application's `users` table and dispatches Laravel's `Registered` event for each signup.
 
-> **Important:** `portal.team_id` is no longer required. Under multi-tenant teams mode every team has its own board at `/p/features/team/{id}`, and bare `/p/features` resolves the board from the URL, the session, the signed-in user's current team, or — where only one team has a board — that team. Setting it is a hard single-tenant lock that 404s every feature outside that team. It is ignored when teams mode is off. See [Portal → Portal Teams](/portal#portal-teams).
+> **Important:** `LARAVEL_CRM_PORTAL_TEAM_ID` / `portal.team_id` was **removed in 2.4.2**. There is no configured portal team any more — every signal is derived from the request or the record. Under multi-tenant teams mode each team has its own board at `/p/features/team/{id}`, and bare `/p/features` resolves the board from, in order: the team in the URL, the board remembered in the visitor's session, the signed-in user's current team, and — where exactly one team has a public board — that team. Delete the variable from your `.env`, and the `team_id` line from a published `config/laravel-crm.php`. See [Portal → Portal Teams](/portal#portal-teams) and the [Upgrade Guide](/upgrading#removing-the-pinned-portal-team).
 
 ## API
 

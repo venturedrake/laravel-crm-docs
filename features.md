@@ -23,7 +23,7 @@ The module is enabled via the `features` entry in the [`modules`](/configuration
 
 The admin index carries a **Public board** button linking to the shareable board. On a [teams](/teams) install the link is team-scoped, so an admin copies a URL that works for someone with no account and no session. See [Portal → Portal Teams](/portal#portal-teams) for how a bare `/p/features` resolves which board to show.
 
-> **Note:** Every team gets its own board. `LARAVEL_CRM_PORTAL_TEAM_ID` is optional — set it only to pin the portal to a single team and 404 everything outside it. A feature submitted through the portal is stamped with the **board's** team, not the submitter's, because a visitor who registered through `/p/register` holds no host-app team.
+> **Note:** Every team gets its own board, and there is no configuration to set — bare `/p/features` resolves from, in order: the team named in the URL, the board remembered in the visitor's session, the signed-in user's current team, and — where exactly one team has a public board — that team. A feature submitted through the portal is stamped with the **board's** team, not the submitter's, because a visitor who registered through `/p/register` holds no host-app team.
 
 ## Models
 

@@ -74,6 +74,15 @@ $product->productPrices()->create([
 ]);
 ```
 
+## Deleting a Product
+
+Deleting a product **soft-deletes** it. The distinction matters because a product is referenced by every quote, order, invoice, purchase order, delivery and deal line ever raised against it:
+
+- **It stays readable on the documents that already reference it.** The line-item relations resolve `withTrashed()`, so the historic line description still renders on the show views, in all 14 [PDF templates](/pdf-templates) and in the [Xero](/xero) sync.
+- **It stays out of the product pickers.** Those query `Product::` directly, so a deleted product cannot be chosen on a new document.
+
+Readable on the documents that already reference it, not choosable on new ones. Before 2.4.1 deleting a product made every document that referenced it permanently unviewable — the foreign-key column was still populated but the relation resolved to null, so reading the product's name fatalled on a quote or invoice that had been fine for months.
+
 ## Searching & Filtering
 
 Searchable by `name`. Filterable by `user_owner_id` and `labels.id`.

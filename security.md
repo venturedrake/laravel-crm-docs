@@ -40,6 +40,38 @@ CSV import previously resolved roles with a bare name lookup, which meant anyone
 
 Deleting a user outside your current team is refused, and the users listing is scoped to the current team so the visible set matches the actionable set.
 
+### Kanban reordering
+
+Dragging a card on a [pipeline](/pipelines) board posts the new sibling order. `onStageSorted` used to authorize only the **first** resolvable record in that batch and then update every id it had been handed, so a record the user had no right to edit was reordered as long as an editable one led the list. Every record in the batch is authorized now, and the batch is resolved, filtered and renumbered in a transaction.
+
+### Portal link minting
+
+The **Get link** modal on quotes, invoices and purchase orders is mounted once in the layout and receives a type slug and a record id over the wire. `confirm()` re-resolves the record through `Support\PortalLink`'s model whitelist — three slugs mapped to three model classes, so a raw class name never crosses the request — and then through the record's policy, rather than trusting the component's own state. A tampered payload cannot mint a signed link to a record the caller may not view.
+
+## Team Data Scoping
+
+### The settings cache is partitioned per team
+
+Until 2.4.1 the settings cache was global while the query behind it was team-scoped. On a `laravel-crm.teams` install, whichever team warmed the cache served its organisation name, ABN, address and logo to every other team until the next settings write — on the settings screen itself and on every invoice, quote and PDF those settings render into.
+
+`SettingService::cacheKey()` partitions by the current team, with a generation counter so a write still reaches every team's entry on cache drivers that cannot tag or scan. Alongside it, the settings view composer dropped its own second, never-invalidated cache; the three team-switch sites flush the cache and unset the now-stale `currentTeam` relation; and the settings services bind as `scoped` rather than `singleton`, so memoised state cannot outlive a queued job or survive between requests under Octane. See [Teams → Data Scoping](/teams#data-scoping).
+
+### The portal rendered another tenant's branding
+
+Until 2.4.2 the public [portal](/portal) rendered a document's page and PDF from **unscoped** settings. The portal is anonymous by design — a signed link, no login — so `BelongsToTeamsScope` never engaged there and every settings read returned every team's rows; `pluck()` keys by name, so whichever team the database listed last supplied the organisation name, ABN, contact block and logo for every tenant's documents alike. A customer opening one team's emailed invoice could be shown another team's branding.
+
+The portal controllers now pin `SettingService` to the **document's own team** via `forTeam()` before rendering anything, which corrects every downstream reader of the shared scoped instance. The cache is partitioned on the same answer. A document that predates teams renders a blank From block rather than borrowing whoever sorted last.
+
+### Team switching verifies membership
+
+`CurrentTeamController`'s non-Jetstream fallback switched a user into any team id it was handed. It verifies membership of the target team before switching now.
+
+### Signed document routes stand down the team scope
+
+`BelongsToTeamsScope` does **not** engage on the three signed portal document routes. Those links are authorised by their signature and the recipient has no account at all, so who happens to be logged in should not decide whether a signed link opens — a staff member signed in to team A was getting a 404 on team B's valid link, because route-model binding filtered the record out.
+
+This narrows nothing: the signature is the authorisation, and the settings the page renders are pinned to the document's own team regardless of the session.
+
 ## API Data Scoping
 
 Every foreign key on an API write is validated against the caller's team by the `ScopedExists` rule. The bare Laravel `exists` rule queries the database directly and so bypasses the team scope, which let an authenticated caller reference another tenant's `external_id` and have it accepted. A table with no `team_id` column falls back to a bare `exists` rather than producing a SQL error, and a caller holding no current team is failed rather than passed.

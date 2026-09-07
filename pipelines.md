@@ -66,6 +66,10 @@ Pipelines and stages are managed through **Settings → Pipelines** and **Settin
 
 [Leads](/leads), [Deals](/deals), and [Quotes](/quotes) all support a Kanban-style board view that groups records by `pipeline_stage_id`. Cards are dragged between columns using SortableJS, and stage transitions persist through the underlying entity's update path.
 
+Each card carries a `data-record-id` attribute, and the drop handler collects **only** those. Every card is followed in the DOM by its own delete-confirm `<dialog>`, so before 2.4.1 the handler posted arrays like `['3', 'modalDeleteLead3', '7']` — the server then tried to update a record with a non-numeric id and 500'd, and the interleaved dialogs inflated `pipeline_stage_order` to 1, 3, 5 rather than 1, 2, 3.
+
+Server-side, the batch is resolved, filtered and renumbered in a transaction, and **every** record in it is authorized. Previously only the first resolvable record was checked, so a record the user had no right to edit was reordered as long as an editable one led the list. See [Security](/security#kanban-reordering).
+
 ## Traits
 
 | Trait | Description |

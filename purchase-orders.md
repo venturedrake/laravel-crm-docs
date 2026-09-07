@@ -66,6 +66,8 @@ Reached from the purchase order via `purchaseOrderLines()`.
 
 > **Note:** `quantity` is `decimal(15,3)`, so a purchase order line can carry `3.5` Kg or `0.25` L. The `HasDecimalQuantity` trait casts it, which means `$line->quantity` reads back as a PHP `float`.
 
+> **Note:** A **soft-deleted product stays readable** on the purchase orders that already reference it. `PurchaseOrderLine::product()` resolves `withTrashed()`, so the line keeps its description on the show view, in all 14 PDF templates and in the [Xero](/xero) sync. The product pickers query `Product::` directly, so a deleted product stays out of selection lists. See [Products](/products).
+
 ## PDF Generation
 
 Purchase orders are exported as PDF documents through `barryvdh/laravel-dompdf`, rendered with one of the five shipped [PDF Templates](/pdf-templates).
@@ -75,6 +77,24 @@ The template is resolved per record: the purchase order's own `pdf_template` col
 Downloads, the emailed attachment and the [portal](/portal) render all resolve the same way, so all three agree.
 
 > **Note:** The Settings key for this document type keeps its hyphen — `pdf_template_purchase-order`.
+
+> **Note:** Purchase orders render **no "From" contact block** on any of the five templates. Their layouts pair a **Supplier** column with a **Delivery details** one rather than From/To, so `purchase_order_contact_details` resolves through the same chain as the other document types but prints nowhere. See [Settings → Document contact details](/settings#document-contact-details).
+
+### Preview
+
+A **Preview** action sits beside every download button — on the purchase order show page and on index rows — rendering the real generated PDF in a slide-over with pdf.js, rather than sending you out through the browser's download tray to check a document before sending it.
+
+Route `laravel-crm.purchase-orders.preview`, carrying the same `can:view` guard as its download twin, so preview grants nothing download did not. The viewer chunk and its pdf.js worker are imported lazily, so a user who never opens a preview downloads none of it.
+
+## Public Portal
+
+Purchase orders have a supplier-facing portal page at `/p/purchase-orders/{external_id}`, so a supplier can read and respond to one without a CRM login. The page renders the purchase order's own [PDF template](/pdf-templates), so what the supplier reads on screen is the document they download — see [Portal](/portal).
+
+### Get link
+
+A **Get link** button beside Preview, on the purchase order show page and on index rows, hands over the same 14-day signed portal URL that gets emailed to the supplier, with an optional **mark as sent** tick. Before 2.4.1 the only way to obtain that link was to send the purchase order.
+
+The modal is mounted once in the layout rather than once per row, and `confirm()` re-resolves the record through `Support\PortalLink`'s model whitelist and the purchase order policy rather than trusting the component's own state — a tampered payload cannot mint a link to a record the caller may not view.
 
 ## Creating a Purchase Order
 

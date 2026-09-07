@@ -68,7 +68,15 @@ if ($quote->orderComplete()) {
 
 ## Public Portal
 
-Quotes have a public-facing portal page accessible at `/p/quotes/{external_id}`. This allows recipients to view and accept or reject quotes without needing a CRM login.
+Quotes have a public-facing portal page accessible at `/p/quotes/{external_id}`. This allows recipients to view and accept or reject quotes without needing a CRM login. The page renders the quote's own [PDF template](/pdf-templates), so what the customer reads on screen is the document they download — see [Portal](/portal).
+
+### Get link
+
+A **Get link** button beside Preview, on the quote show page and on index rows, hands over the same 14-day signed portal URL that gets emailed to the customer. Before 2.4.1 the only way to obtain that link was to send the quote.
+
+The modal is mounted once in the layout rather than once per row, and `confirm()` re-resolves the record through `Support\PortalLink`'s model whitelist and the quote policy rather than trusting the component's own state — a tampered payload cannot mint a link to a record the caller may not view.
+
+> **Note:** The **mark as sent** tick offered on invoices and purchase orders is not offered on quotes: quotes carry no `sent` column, so there is nothing to tick.
 
 ## Line Items
 
@@ -93,6 +101,8 @@ Reached from the quote via `quoteProducts()`.
 
 > **Note:** `quantity` is `decimal(15,3)`, so a product sold by weight or volume can be quoted at `3.5` Kg or `0.25` L. The `HasDecimalQuantity` trait casts it, which means `$line->quantity` reads back as a PHP `float` — a whole quantity of 2 compares as `2.0`. Values are rounded to 3 decimal places on write, and a whole quantity still renders as `2` rather than `2.000`.
 
+> **Note:** A **soft-deleted product stays readable** on the quotes that already reference it. `QuoteProduct::product()` resolves `withTrashed()`, so the line keeps its description on the show view, in all 14 PDF templates and in the [Xero](/xero) sync. The product pickers query `Product::` directly, so a deleted product stays out of selection lists — readable on the documents that already reference it, not choosable on new ones. See [Products](/products).
+
 ## PDF Generation
 
 Quotes are exported as PDF documents through `barryvdh/laravel-dompdf`, rendered with one of the five shipped [PDF Templates](/pdf-templates).
@@ -100,6 +110,14 @@ Quotes are exported as PDF documents through `barryvdh/laravel-dompdf`, rendered
 The template is resolved per record: the quote's own `pdf_template` column when set, otherwise the default chosen for **quote** under **Settings → Templates**, otherwise a PDF view the host has published and customised, otherwise `modern`. A **PDF template** select on the quote create and edit form pins a template to the record; leaving it blank follows the Settings default.
 
 Downloads, the emailed attachment and the [portal](/portal) render all resolve the same way, so all three agree.
+
+The **"From"** contact block on the themed templates is filled from **Settings → General → Document contact details**, or from a quote-specific override — see [Settings](/settings#document-contact-details). `classic` renders no From block on quotes.
+
+### Preview
+
+A **Preview** action sits beside every download button — on the quote show page and on index rows — rendering the real generated PDF in a slide-over with pdf.js, rather than sending you out through the browser's download tray to check a document before sending it.
+
+Route `laravel-crm.quotes.preview`, carrying the same `can:view` guard as its download twin, so preview grants nothing download did not. The viewer chunk and its pdf.js worker are imported lazily, so a user who never opens a preview downloads none of it.
 
 ## Views
 

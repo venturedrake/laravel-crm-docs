@@ -60,7 +60,7 @@ The sidebar navigation is organized into the following sections:
 - **Products** — Product catalogue with search and autocomplete.
 
 ### Administration
-- **Settings** — General settings, [PDF templates](/pdf-templates), roles and permissions, pipelines, pipeline stages, product categories, tax rates, labels, lead sources, custom fields, custom field groups, chat widgets, and integrations (Xero, ClickSend).
+- **Settings** — [General settings](/settings) (split across a tab per entity), [PDF templates](/pdf-templates), roles and permissions, pipelines, pipeline stages, product categories, tax rates, labels, lead sources, custom fields, custom field groups, chat widgets, and integrations (Xero, ClickSend).
 - **Updates** — Installed version, available updates, and the commands to run. See [Updates](/updates).
 
 > **Note:** [Customers](/customers) have full CRUD routes under `/crm/customers` but no sidebar item in the rebuilt 2.x navigation — reach them by URL or from a linked person or organisation. The underlying model is named `Client`; the routes, permissions and UI all say *Customers*.
@@ -107,9 +107,13 @@ Create and edit forms use a consistent card-based layout with:
 
 Quotes, orders, invoices, deliveries, and purchase orders generate downloadable PDF documents via `barryvdh/laravel-dompdf`, rendered through one of five pickable layouts. See [PDF Templates](/pdf-templates).
 
+A **Preview** action beside every download button — on the show page and on index rows — renders the real generated PDF in a slide-over with pdf.js, so a document can be checked before sending without a trip through the browser's download tray. On quotes, invoices and purchase orders a **Get link** button beside it hands over the same 14-day signed portal URL that gets emailed to the recipient.
+
 ### Portal Pages
 
 Quotes, invoices, and purchase orders have public-facing portal pages at unique external URLs (`/p/quotes/{external_id}`, `/p/invoices/{external_id}`, `/p/purchase-orders/{external_id}`). These allow recipients to view, accept, or reject a quote, view an invoice, or respond to a purchase order without needing a CRM login.
+
+Those pages render **the record's own PDF template**, chrome-free and pinned to a light theme, so what a customer reads on screen is the document they download rather than a separate HTML layout that drifts away from it.
 
 The public **feature board** lives on the same portal at `/p/features`, with a per-team board at `/p/features/team/{id}` on a multi-tenant install. See [Portal](/portal).
 

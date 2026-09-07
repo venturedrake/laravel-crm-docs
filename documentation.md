@@ -45,6 +45,7 @@
 - [Purchase Orders](/purchase-orders)
 - [Quotes](/quotes)
 - [Roles](/roles)
+- [Settings](/settings)
 - [SMS Marketing](/sms-marketing)
 - [Tasks](/tasks)
 - [Tax Rates](/tax-rates)

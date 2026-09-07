@@ -4,6 +4,100 @@
 
 Two things to read before any upgrade: the **version-specific notes** for the release you are moving to, and [Upgrading Within 2.x](#upgrading-within-2-x), which is the same every release. Read the version notes **first** — some releases change who is allowed to do what, and the failure mode is a `403` for a user who could previously click the button.
 
+## Upgrading to 2.4.2
+
+A two-fix patch release. Both fixes matter to someone: every PDF preview was failing on nginx and older Apache, and the public portal was rendering one tenant's branding on another tenant's document.
+
+### Republish assets — the pdf.js worker filename changed
+
+The pdf.js worker is now emitted as `pdf.worker.min-<hash>.js` where it was `pdf.worker.min-<hash>.mjs`. `.mjs` is in the default MIME map of neither nginx nor older Apache, so those servers handed it over as `application/octet-stream` and the browser's strict module-script MIME check refused to run it — every PDF preview failed with *"setting up fake worker failed"*, on a build and a publish that were both correct.
+
+`manifest.json` names the new filename, so **a host that upgrades without republishing assets has a manifest pointing at a file that is no longer on disk, and every preview fails.** Nothing manual is needed — the composer hook fires `laravelcrm:upgrade`, which republishes the assets and prunes the stale content-hashed file — but this is the release where `composer update` on its own is not enough. If you have not added the hook, see [After upgrading](#after-upgrading) below, or run `php artisan laravelcrm:upgrade` by hand.
+
+### No migrations; one config key removed
+
+No tables and no columns. Unlike 2.4.1 this is *not* a "no new config keys" release: `portal.team_id` is **removed** — see below. Run
+
+```bash
+composer update venturedrake/laravel-crm
+php artisan laravelcrm:update
+```
+
+as usual. `laravelcrm:update` still advances the `db_version` marker, so run it even though there is nothing to migrate — otherwise the system check reports the database as behind the code.
+
+### Multi-tenant installs: the portal leaked branding across teams
+
+Before this release the public portal rendered a document's page and PDF from **unscoped** settings. The portal is anonymous — a signed link, no login — so `BelongsToTeamsScope` never engaged there and the settings query returned every team's rows; `pluck()` keys by name, so whichever team the database listed last supplied the organisation name, ABN, contact block and logo on every tenant's quotes, invoices and purchase orders alike. On a `laravel-crm.teams` install, a customer opening one team's emailed invoice link could be shown another team's branding.
+
+**No data migration is needed.** The fix is in the scope and the cache key — the portal controllers pin the settings service to the document's own team before rendering — so upgrading and clearing the application cache is sufficient. Single-tenant installs were never affected. See [Security](/security) and [Portal → Portal Settings and Teams](/portal#portal-settings-and-teams).
+
+### Removing the pinned portal team
+
+`LARAVEL_CRM_PORTAL_TEAM_ID` and `config('laravel-crm.portal.team_id')` are **removed**. The variable sat ahead of every other portal team signal as a hard single-tenant lock, which was harmless while the portal served only roadmaps and wrong once the portal started answering "whose branding does this invoice carry?" — a document states its own owner, and one env var was silently overruling it for every team on the install. Every portal team signal is now derived from the request or the record.
+
+**If you had that variable set,** delete it from your `.env` and drop the `team_id` line from `config/laravel-crm.php` if you have published the config. Nothing reads it any more, so leaving it in place is inert rather than harmful — but the portal will stop behaving as a single-tenant lock, which is the point. A team whose board you do *not* want public should have its features marked non-public rather than relying on the other teams being locked out.
+
+Boards stay reachable per team at `/p/features/team/{id}`, and bare `/p/features` resolves as it has since 2.4.0: the team in the URL, the board remembered in the visitor's session, the signed-in user's current team, and finally — when exactly one team has a public board — that team. See [Portal → Portal Teams](/portal#portal-teams).
+
+### Views to re-publish: none
+
+**None.** Neither change in this release touches `resources/views`, so a published view cannot hide either fix. If you are coming from 2.4.0, the 2.4.1 table below still applies to you.
+
+## Upgrading to 2.4.1
+
+A patch release that is mostly additive: a PDF preview drawer on every document, a **Get link** button on the three document types that have a portal page, portal pages that render the record's own PDF template, and a tabbed Settings → General screen.
+
+### What's new
+
+- **A PDF preview drawer** beside every download button on quotes, orders, deliveries, invoices and purchase orders, rendering the real generated PDF with pdf.js rather than an HTML approximation of it.
+- **A "Get link" button** on invoice, quote and purchase-order show pages and index rows, handing over the same 14-day signed portal URL that gets emailed to the customer.
+- **Portal document pages render the record's selected PDF template**, so the page a customer opens from an emailed link and the PDF they download from it are the same document. See [Portal](/portal).
+- **Settings → General is split across tabs** — one per entity, in the order records flow through the CRM. See [Settings](/settings).
+- **A shared `pdf_contact_details` setting** filling the "From" block on quote, order, delivery and invoice PDFs. See [Settings → Document contact details](/settings#document-contact-details).
+- **The settings logo can be deleted**, not only replaced.
+- **`laravelcrm:upgrade` warns about drifted published views** on every deploy. See [Updates](/updates).
+
+### No migrations, no new config keys
+
+This is a patch release. It adds no tables or columns and no configuration keys, so
+
+```bash
+composer update venturedrake/laravel-crm
+php artisan laravelcrm:update
+```
+
+is the whole upgrade. `laravelcrm:update` still advances the `db_version` marker, so run it even though there is nothing to migrate — otherwise the system check reports the database as behind the code.
+
+### Multi-tenant installs: the settings cache leaked across teams
+
+Before this release the settings cache was global while the query behind it was team-scoped, so on a `laravel-crm.teams` install whichever team warmed the cache served its organisation name, ABN, address and logo to every other team until the next settings write — on the settings screen and on the documents those settings are rendered into.
+
+**No data migration is needed.** The fix is in the cache key, so upgrading and clearing the application cache is sufficient. Single-tenant installs were never affected. See [Security](/security) and [Teams → Data Scoping](/teams#data-scoping).
+
+### Views to re-publish
+
+If you have published views into `resources/views/vendor/laravel-crm`, the view finder prefers your frozen copy, and this release changes:
+
+| View | What you miss if you keep the old copy |
+|---|---|
+| `livewire/settings/setting-edit.blade.php` | The flat single-column settings page persists — harmless, and it keeps saving correctly |
+| `livewire/kanban-board/record.blade.php`, `livewire/kanban-board/sortable.blade.php` | The client-side half of the drag-and-drop fix — the `data-record-id` marking. The server side resolves, filters and renumbers regardless, so the 500 and the authorization gap are closed either way |
+| The quote / order / delivery / invoice / purchase-order `*-index`, `*-related-index`, `*-show` and `*-form` views | The Preview and **Get link** buttons — the routes exist, but nothing renders a link to them |
+| `portal/quotes/show`, `portal/invoices/show`, `portal/purchase-orders/show` | The portal page keeps its own hand-built layout instead of rendering the record's PDF template |
+| `layouts/app.blade.php`, `layouts/portal.blade.php` | The Get-link modal mount, the chrome-free portal document pages and the footer fix. `layouts/partials/nav-integrations.blade.php` no longer exists in the package at all |
+| `pdfs/{modern,bold,compact,professional}/*` and the five classic `*/pdf.blade.php` | The null-date guards, the Bold header inset and its logo alignment |
+| `mail/templates/send-invoice/message.blade.php` | The no-due-date variant of the emailed invoice body |
+
+`php artisan laravelcrm:upgrade` now names your drifted published views on every deploy, so you no longer have to work this out by hand — it md5-compares each published blade against the packaged one and warns on both drifted views and views the package no longer ships. It only warns; it never fails the run. See [Updates](/updates).
+
+**The Settings → Templates thumbnails come back on their own.** 2.4.0 shipped without the five template SVGs, so the picker rendered broken images; the artwork has moved out of the build output directory and is republished by `laravelcrm:upgrade`, which `laravelcrm:update` calls first. Nothing manual is needed. See [PDF Templates → Thumbnails](/pdf-templates#thumbnails).
+
+**If you published the portal views**, note the three `crm-portal-*-line-items` Livewire components are gone. A published portal view still referencing one will throw — remove the reference, or re-publish the view.
+
+### New routes
+
+Five preview routes are added: `laravel-crm.quotes.preview` and its order, delivery, invoice and purchase-order siblings. Each carries the same `can:view` guard as the download route it mirrors, so they grant nothing your existing roles did not already allow.
+
 ## Upgrading from 2.3.x to 2.4.0
 
 Version 2.4.0 is the largest release since the 2.x rewrite. It enforces authorization on every mutating action, widens line item quantities to decimals, gives every team its own lookup data on a multi-tenant install, and adds a new `laravelcrm:upgrade` command with a composer hook behind it.
@@ -41,7 +135,7 @@ Steps 2 and 4 look redundant and are not: step 2 fixes missing permissions **whi
 - **Decimal line item quantities** — a product can be sold by weight or volume (3.5 Kg, 0.25 L).
 - **A start date and time on tasks** (`start_at`). See [Tasks](/tasks).
 - **`laravelcrm:upgrade`**, a system-check banner and a rebuilt updates page. See [Updates](/updates).
-- **Every public feature board is team-aware**, and `LARAVEL_CRM_PORTAL_TEAM_ID` is now optional. See [Portal](/portal).
+- **Every public feature board is team-aware**, and `LARAVEL_CRM_PORTAL_TEAM_ID` is now optional — and **removed in 2.4.2**, see [Removing the pinned portal team](#removing-the-pinned-portal-team) above. See [Portal](/portal).
 - **Per-team API foreign-key scoping**, and per-account throttling on `POST /auth/token`. See [API](/api).
 - **Persian (`fa`) translations**.
 
@@ -283,6 +377,7 @@ Nothing extra is needed for the first — the composer hook handles it. Just mak
 | Prunes stale content-hashed build files | Yes | Yes |
 | Clears cached config, routes, views | Yes | Yes |
 | Publishes Flasher assets | Yes | Yes |
+| Warns about drifted published views | Yes | Yes |
 | Publishes migration stubs | No | Yes |
 | Runs `migrate` | No | Yes |
 | Runs seeders and data backfills | No | Yes |

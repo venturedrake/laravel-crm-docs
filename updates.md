@@ -28,6 +28,10 @@ They do deliberately different jobs.
 
 Republishes built assets, prunes stale content-hashed build output, publishes Flasher assets and clears cached config, routes and views.
 
+**It also warns about drifted published views.** It md5-compares every published blade under `resources/views/vendor/laravel-crm` against the copy the package ships, and names both the views that have drifted and the ones the package no longer ships at all. `PdfTemplateRegistry::LEGACY_VIEWS` is skipped, since a preserved override is the entire point of those. This is how a view frozen at an older component contract used to go unnoticed until it 500'd a page in production, with nothing anywhere in the upgrade path saying so.
+
+The check **only warns** — it never fails a composer run, because it fires from a `post-autoload-dump` hook on production boxes. Re-publish a view it names, or diff it and re-apply your edits. See the [Upgrade Guide](/upgrading#views-to-re-publish).
+
 **It never opens a database connection, and it never prompts.** That is what makes it safe to fire from a composer hook: during a build the database may be unreachable, mid-migration, or belong to a different release, and there is nobody at a TTY to answer a question. It also exits successfully — rather than failing the composer run — when the application is not yet in a state to publish into.
 
 ### `laravelcrm:update`
@@ -48,6 +52,7 @@ Calls `laravelcrm:upgrade` first, so one command by hand still does everything, 
 | Prunes stale content-hashed build files | Yes | Yes |
 | Clears cached config, routes, views | Yes | Yes |
 | Publishes Flasher assets | Yes | Yes |
+| Warns about drifted published views | Yes | Yes |
 | Publishes migration stubs | No | Yes |
 | Runs `migrate` | No | Yes |
 | Runs seeders and data backfills | No | Yes |

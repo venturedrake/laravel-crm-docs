@@ -88,14 +88,40 @@ Every surface that renders a document PDF resolves through the registry, so a do
 | Surface | Resolved by |
 |---|---|
 | Document downloads | `QuoteController`, `OrderController`, `InvoiceController`, `DeliveryController`, `PurchaseOrderController` |
+| The **PDF preview drawer** | The same five controllers, through the shared `Concerns\ServesPdfDocuments` |
 | Emailed PDF attachments | `SendQuote` / `SendInvoice` / `SendPurchaseOrder`, and their Livewire equivalents |
-| [Portal](/portal) renders | `Portal\QuoteController`, `Portal\InvoiceController`, `Portal\PurchaseOrderController` |
+| [Portal](/portal) downloads | `Portal\QuoteController`, `Portal\InvoiceController`, `Portal\PurchaseOrderController` |
+| [Portal](/portal) document pages | `Support\PortalDocument`, rendering the same view into an iframe |
 
 > **Note:** Before 2.4.0 the send components loaded `laravel-crm::quotes.pdf` and friends directly, so an emailed attachment could differ from the document the sender had just downloaded. They no longer can.
+
+> **Note:** Preview and download build **one** PDF served two ways — `ServesPdfDocuments::buildPdf()` generates it, and the two actions differ only in their `Content-Disposition`. They cannot drift apart as the templates change. Likewise the portal page and the portal download resolve through the same `viewForModel()` call with the same view data.
+
+## The "From" contact block
+
+The themed templates print a **From** contact block above the document body, filled from **Settings → General → Document contact details** — a shared `pdf_contact_details` setting, overridable per document type. See [Settings → Document contact details](/settings#document-contact-details) for the resolution chain and for how to clear a field.
+
+Where the block renders is not uniform, and the gaps are deliberate:
+
+| Template | Quote | Order | Delivery | Invoice | Purchase order |
+|---|---|---|---|---|---|
+| `classic` | — | — | — | Yes | — |
+| `modern` | Yes | Yes | Yes | Yes | — |
+| `bold` | Yes | Yes | Yes | Yes | — |
+| `compact` | Yes | Yes | Yes | Yes | — |
+| `professional` | Yes | Yes | Yes | Yes | — |
+
+`classic` reproduces the pre-2.4.0 layouts unchanged, where only the invoice blade ever carried a From block. Purchase-order layouts pair a **Supplier** column with a **Delivery details** one rather than From/To, so no purchase-order blade reads the value on any template.
+
+That is the answer to *"why is my quote's From block empty on Classic?"* — the setting is resolving fine; that template does not render it.
 
 ## Thumbnails
 
 The picker's artwork is served through `laravel-crm.settings.templates.thumbnail`, which prefers the host's published copy in `public/vendor/laravel-crm/img/pdf-templates` and falls back to the copy inside the package. A host whose published assets predate the artwork still sees the thumbnails without re-publishing.
+
+The SVGs ship in `resources/assets/img/pdf-templates` and publish to `public/vendor/laravel-crm/img/pdf-templates`.
+
+> **Note:** **2.4.0 shipped with no thumbnail artwork at all**, so the picker rendered five broken images on every install. The SVGs then lived in `public/vendor/laravel-crm/img/pdf-templates` — which is the Vite build output directory, and `vite.config.js` sets `emptyOutDir: true`, so the `npm run build` that preceded the tag deleted them. That also made the "fall back to the copy inside the package" path inert on arrival: neither copy existed, so the route 404'd for every slug. 2.4.1 moved the artwork to a publish source the build cannot reach, and `laravelcrm:upgrade` restores it. **Nothing manual is needed** — see [Updates](/updates).
 
 ## Permissions
 

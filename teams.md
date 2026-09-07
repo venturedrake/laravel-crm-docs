@@ -58,6 +58,14 @@ All models that use the `BelongsToTeams` trait are automatically scoped to the s
 
 The scope is inert unless `laravel-crm.teams` is on and the user has a current team, so a single-tenant install behaves as though it were not there.
 
+### Settings
+
+[Settings](/settings) are team-scoped too — each team has its own organisation name, logo, ID prefixes and document terms — and the settings **cache** is partitioned per team to match, with a generation counter so a write still invalidates every team's entry on cache drivers that cannot tag or scan. Switching teams flushes the cache and unsets the now-stale `currentTeam` relation.
+
+The settings services bind as `scoped` rather than `singleton`, so memoised state cannot outlive a queued job or survive between requests under Octane.
+
+The [portal](/portal) is the one surface that reads settings with no signed-in user, so it pins the settings service to the document's own team before rendering — see [Portal → Portal Settings and Teams](/portal#portal-settings-and-teams).
+
 ## Enabling Teams
 
 Set the environment variable:
