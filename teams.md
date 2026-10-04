@@ -52,6 +52,8 @@ $team = Team::create([
 $team->users()->attach($user->id);
 ```
 
+In the CRM, members are managed with the checkboxes on the team's edit form. Before 2.4.6, that form opened with no members checked, and saving it removed every member from the team. Re-check the membership of any team that was saved on an earlier version.
+
 ## Data Scoping
 
 All models that use the `BelongsToTeams` trait are automatically scoped to the signed-in user's **host** team (`auth()->user()->currentTeam`), giving data isolation between tenants without manual query filtering. The trait also stamps `team_id` on create.

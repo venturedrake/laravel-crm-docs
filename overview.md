@@ -72,7 +72,7 @@ The sidebar navigation is organized into the following sections:
 Most entities provide a paginated table view with:
 
 - **Search** — Text search across key fields.
-- **Filters** — Filter by owner, labels, and other entity-specific criteria.
+- **Filters** — Filter by owner, labels, and other entity-specific criteria. The Owner filter searches on the server: type a name to find matching users, up to 20 at a time. Selected owners stay visible as chips, and **Clear** empties the filter (there is no **Select all**).
 - **Sorting** — Click column headers to sort ascending/descending.
 - **Actions** — View, edit, and delete buttons on each row.
 - **Create Button** — Prominently placed button to add new records.
@@ -95,7 +95,7 @@ Each entity's detail page typically shows:
 
 Create and edit forms use a consistent card-based layout with:
 
-- **Autocomplete Fields** — People, organisations, and products use autocomplete for quick selection.
+- **Autocomplete Fields** — People, organisations, and products use autocomplete for quick selection. If you pick a person or organisation and then edit the name, the field unlinks from the picked record and shows **New**, so saving creates a new record rather than attaching the old one.
 - **Dynamic Product Lines** — Deals, quotes, orders, invoices, deliveries, and purchase orders support adding multiple product line items with quantity, price, tax rate, and subtotal calculations. Quantities accept up to three decimal places.
 - **PDF Template Picker** — Quote, order, invoice, delivery, and purchase-order forms carry a **PDF template** select pinning one of the five shipped layouts to that record, or leaving it to follow the Settings default. See [PDF Templates](/pdf-templates).
 - **Address Fields** — Structured address input with multiple address support.

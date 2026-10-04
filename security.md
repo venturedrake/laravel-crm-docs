@@ -86,6 +86,10 @@ Cross-team ids present as a `422` on the field. Single-tenant installs are unaff
 
 Any CRM admin can create a [monitor](/monitoring), which makes an outbound HTTP request to a URL they supply. Monitor URLs that resolve to loopback, private, link-local or reserved addresses are rejected before the request is made, and DNS resolution is pinned so cURL cannot re-resolve to a different address than the guard validated — a defence against DNS rebinding. Set `LARAVEL_CRM_MONITORING_ALLOW_PRIVATE_TARGETS=true` only if you genuinely need to monitor services on your own private network.
 
+## Outbound Version Check
+
+The CRM's version check makes an outbound POST to `api.laravelcrm.com` from the `Settings` middleware. Before 2.4.3 that request had no timeout. The install id is only recorded from a successful response, so an install with outbound traffic to that host blocked retried on every request, and each CRM page load could stall indefinitely. The request now has a 2s connect / 3s total timeout. It only runs during the cached settings-seeding pass, and an hour-long backoff is set before the request goes out, so a blocked install no longer stalls and makes at most one attempt an hour. See [Updates → Version Check](/updates#version-check).
+
 ## Field Encryption
 
 Sensitive personal data (names, emails, phone numbers) can be encrypted at rest in the database. Enable via:
@@ -101,6 +105,8 @@ php artisan laravelcrm:encrypt
 ```
 
 Encrypted fields are declared in each model's `$encryptable` array and handled transparently by the `LaravelEncryptableTrait`.
+
+Searching works on decrypted values. The index searches and, since 2.4.6, the person and organization autocompletes go through the `SearchesEncryptableContacts` trait, which matches and sorts in PHP when encryption is on. Before 2.4.6, the autocompletes ran `LIKE` against the ciphertext and found nothing.
 
 ## Reporting Vulnerabilities
 

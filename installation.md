@@ -8,6 +8,9 @@
 - MySQL 5.7+ / MariaDB 10.2.7+
 - Laravel 11, 12, or 13
 - Livewire 3 or 4
+- Guzzle 7 or 8
+
+> **Note:** Guzzle 8 is supported from 2.4.5. The package's own constraint still lists Guzzle 6, but Laravel 11 and later require Guzzle `^7.8.2`, so in practice it is 7 or 8. If you also want the Xero integration, its package holds your app on Guzzle 7 — see [Optional Integrations](#optional-integrations).
 
 ## Install Laravel CRM
 
@@ -50,6 +53,20 @@ php artisan laravelcrm:install --modules=leads,deals,quotes,invoices
 ### Step 3. Access the CRM
 
 Navigate to `http://<yoursite>/crm` (or whatever you set `LARAVEL_CRM_ROUTE_PREFIX` to). Log in with the owner credentials you created during installation.
+
+## Optional Integrations
+
+### Xero
+
+The [Xero integration](/xero) needs a package that Laravel CRM suggests but does not require:
+
+```bash
+composer require dcblogdev/laravel-xero:1.1.3
+```
+
+It is not required by default because no published version of it allows `guzzlehttp/guzzle` 8. Requiring it would make Laravel CRM uninstallable in any app that has moved to Guzzle 8, including a stock Laravel 13.32+ app. Installing it holds your app on Guzzle 7 until upstream ships a Guzzle 8 release.
+
+Without it, the CRM runs normally and the Xero integration is inert, and **Settings → Integrations → Xero** tells you what to install. Leave the Xero credentials unset too: the scheduled Xero syncs are registered whenever they are configured, and fail without the package. See [Xero → When the package is not installed](/xero#when-the-package-is-not-installed).
 
 ## The composer hook
 

@@ -9,8 +9,30 @@ Laravel CRM integrates with [Xero](https://www.xero.com/) accounting software to
 ## Requirements
 
 - A Xero account with API access.
-- The `dcblogdev/laravel-xero` package (included as a dependency).
+- The `dcblogdev/laravel-xero` package, installed by your application (see below).
 - Xero OAuth2 credentials (Client ID and Client Secret) from the [Xero Developer Portal](https://developer.xero.com/).
+
+Since 2.4.5, Laravel CRM only *suggests* `dcblogdev/laravel-xero`. It does not require it. Install it yourself:
+
+```bash
+composer require dcblogdev/laravel-xero:1.1.3
+```
+
+> **Important:** No published version of `dcblogdev/laravel-xero` allows `guzzlehttp/guzzle` 8 (1.1.3 requires `^6|^7`, later releases `^7.9.3`), so installing it **pins your app to Guzzle 7**. A stock Laravel 13.32+ app resolves Guzzle 8, so you have to choose between Xero sync and Guzzle 8 until upstream ships a Guzzle 8 release. Upgrading an existing install? Add the package in the same deploy as the upgrade — see [Upgrading to 2.4.5](/upgrading#upgrading-to-245).
+
+### When the package is not installed
+
+Without `dcblogdev/laravel-xero`, the CRM runs normally and the Xero integration is inert:
+
+- **Settings → Integrations → Xero** shows an alert naming the missing package in place of the **Connect** button.
+- The connect and disconnect routes stay registered, so links to them still resolve, but they redirect back to the settings screen.
+- `php artisan laravelcrm:xero` exits non-zero and prints the install command.
+- Product, invoice and purchase-order sync is a no-op, and the `XeroToken` observer and `XeroTenant` middleware are not registered.
+- Stored tokens and `crm_xero_*` rows are kept. Installing the package restores the connection without re-authorising, as long as the stored refresh token has not expired while the package was gone (nothing runs `xero:keep-alive` in that time).
+
+There is no banner, so the settings screen is the only place this shows in the UI. The exception is the scheduler: if you still have a published `config/xero.php` with Xero credentials set, the [scheduled syncs](#scheduled-syncs) are still registered and fail on every run. If you are dropping Xero, remove `XERO_CLIENT_ID` and `XERO_CLIENT_SECRET` from your `.env`.
+
+Every entry point checks `VentureDrake\LaravelCrm\Support\XeroIntegration` first. Use `XeroIntegration::installed()` to check that the package is present, and `XeroIntegration::connected()` to check that it is present *and* connected. Use them in your own code in place of `\Dcblogdev\Xero\Facades\Xero::isConnected()`, which is a fatal `Class not found` when the package is absent.
 
 ## Configuration
 
@@ -101,7 +123,7 @@ The following syncs are auto-registered in the service provider's scheduler:
 - `laravelcrm:xero contacts` — every 10 minutes
 - `laravelcrm:xero products` — every 10 minutes
 
-These only run when Xero credentials are configured.
+These are registered whenever Xero credentials are configured (`xero.clientId` and `xero.clientSecret`). They do **not** check that `dcblogdev/laravel-xero` is installed. Without the package but with credentials still configured, `xero:keep-alive` fails as an undefined command every 5 minutes, and `laravelcrm:xero` exits non-zero with the install command every 10 minutes. Remove the credentials if you are not using Xero — see [When the package is not installed](#when-the-package-is-not-installed).
 
 ## Data Model
 

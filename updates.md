@@ -122,6 +122,24 @@ Two details worth knowing:
 - **A missing marker counts as behind.** Either the install predates the marker, or it was never stamped — both want the same action.
 - **It is written install-wide.** `db_version` and the `db_update_*` flags describe the schema, which is install-wide, but settings are team-scoped under `laravel-crm.teams` and a console command has no authenticated user. They are read and written with the team scope dropped, and a flag counts as pending when *any* of its rows holds `0`, so per-team duplicates left by older versions cannot mask a genuinely outstanding update.
 
+## Settings Seeding
+
+`Http/Middleware/Settings` also seeds any missing default settings rows. That pass is idempotent and only matters after an install, an upgrade or a cache clear. Before 2.4.3 it ran on every CRM page and cost 36 `crm_settings` queries plus an `information_schema` probe.
+
+Since 2.4.3 it runs **once per version per team**, behind a cache flag:
+
+- **The flag is stamped with the package version** — `crm.settings-seeded.<version>`, the same `config('laravel-crm.version')` the `db_version` marker uses. A deploy that bumps the version re-arms the pass on its own, and nobody has to remember to clear a cache.
+- **It has a 24-hour TTL**, so a settings row deleted by hand comes back on the next day's first request rather than staying missing until the next release.
+- **It is partitioned by team** on a `laravel-crm.teams` install. Most of what the pass seeds is team-scoped — `organization_name`, `currency`, the document prefixes — so each team's first request after a deploy runs its own pass. With a single shared flag, only the team that made the first request would get its rows.
+
+## Version Check
+
+The CRM learns the latest published version by posting to `api.laravelcrm.com` and storing the answer as the `version_latest` setting. The `Settings` middleware makes this request when the stored version is more than three days old or the install has no `install_id` yet. Since 2.4.3 the check runs inside the [settings-seeding pass](#settings-seeding), so it is only considered when that pass runs: once per version per team, then again after the 24-hour TTL. The seeding flag is set even when the request fails. The request itself has a **2s connect / 3s total timeout**, and an hour-long backoff is set *before* it goes out. An install with outbound traffic to that host blocked therefore pays for at most one failed attempt an hour, not one per page view. See [Security → Outbound version check](/security#outbound-version-check).
+
+> **Note:** Opening the updates page runs the same check from `UpdateController`, and that copy has no timeout. On an install with outbound traffic blocked, `/crm/updates` can still be slow to load.
+
+The header badge compares versions with `version_compare()`, as `SystemCheckService` does. Before 2.4.3 it compared strings with `<`, so once a minor version reached double digits it could show *"Latest Version"* against a release that was in fact newer.
+
 ## Configuration
 
 ```php

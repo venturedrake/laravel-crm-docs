@@ -4,6 +4,213 @@
 
 Two things to read before any upgrade: the **version-specific notes** for the release you are moving to, and [Upgrading Within 2.x](#upgrading-within-2-x), which is the same every release. Read the version notes **first** — some releases change who is allowed to do what, and the failure mode is a `403` for a user who could previously click the button.
 
+## Upgrading to 2.4.7
+
+A one-fix patch release. If you picked a person or organization from an autocomplete and then edited the name, the form stayed linked to the record you picked. Picking "Paul Clark" and changing the name to "Paul" kept the link to Paul Clark: the **New** badge stayed hidden, and saving attached the existing Paul Clark instead of creating "Paul". The link is now cleared as soon as the trimmed name stops matching the linked record. The check compares against the decrypted name, so it also works with `encrypt_db_fields` on.
+
+### No migrations, no new config keys
+
+This release adds no tables, columns or configuration keys, so
+
+```bash
+composer update venturedrake/laravel-crm
+php artisan laravelcrm:update
+```
+
+is the whole upgrade. Run `laravelcrm:update` even though there is nothing to migrate. It still advances the `db_version` marker, and without it the system check reports the database as behind the code.
+
+### Views to re-publish: none
+
+**None.** The fix is PHP-only (in the `HasPersonSuggest` and `HasOrganizationSuggest` traits), so it applies even if you keep published views. If you are coming from 2.4.5 or earlier, the 2.4.6 table below still applies to you.
+
+## Upgrading to 2.4.6
+
+A bug-fix patch release:
+
+- **Clicking an autocomplete suggestion now links the record.** On the **Related organizations** and **Related people** cards, and on the person and organization fields of the lead, deal, quote, order, invoice and purchase-order forms, the input closed its dropdown on blur. Clicking a suggestion blurred the input first, so the dropdown was gone before the click registered and nothing was linked. The dropdown now opens on focus and input and closes on a click outside, Esc or Tab. The input also sets `autocomplete="off"`, so the browser's own suggestion list no longer covers it.
+- **Saving a team no longer removes all of its members.** The edit form opened with no members checked, and saving synced that empty list. See [Teams](/teams).
+- **Person and organization autocompletes now work with field encryption on.** They used to run `LIKE` against the ciphertext and found nothing. With `encrypt_db_fields` on, they now match and sort on decrypted values, as the index searches already did. See [Security → Field Encryption](/security#field-encryption).
+- **The Send quote, invoice and purchase-order subjects no longer end in a dangling "for".** When the document has no organization, the subject falls back to the person's name, and drops the clause when there is neither.
+- **`<!--[if BLOCK]><![endif]-->` no longer appears in the Send invoice message.** These are Livewire morph markers, and they were reaching the email as literal text.
+- **The user create/edit form no longer prints a stray `>`** under the card.
+
+### No migrations, no new config keys
+
+This release adds no tables, columns or configuration keys, so
+
+```bash
+composer update venturedrake/laravel-crm
+php artisan laravelcrm:update
+```
+
+is the whole upgrade. Run `laravelcrm:update` even though there is nothing to migrate. It still advances the `db_version` marker, and without it the system check reports the database as behind the code.
+
+### Views to re-publish
+
+If you have published views into `resources/views/vendor/laravel-crm`, the view finder prefers your frozen copy, and this release changes:
+
+| View | What you miss if you keep the old copy |
+|---|---|
+| `livewire/related-organizations.blade.php`, `livewire/related-people.blade.php` | The autocomplete fix. **A frozen copy stays broken**: it keeps `wire:blur`, so clicking a suggestion still does not link the organization or person |
+| `livewire/leads/lead-form.blade.php` and the same file under `.../deals`, `.../quotes`, `.../orders`, `.../invoices`, `.../purchase-orders` (`deal-form`, `quote-form`, `order-form`, `invoice-form`, `purchase-order-form`) | The same fix for the person and organization fields on the create and edit forms. A frozen copy still loses the click on a suggestion |
+| `mail/templates/send-quote/subject.blade.php`, `mail/templates/send-invoice/subject.blade.php`, `mail/templates/send-purchase-order/subject.blade.php` | The person-name fallback. A frozen copy still ends the subject in a dangling "for" when the document has no organization |
+| `mail/templates/send-invoice/message.blade.php` | The morph-marker fix. A frozen copy still puts `<!--[if BLOCK]><![endif]-->` into the message body |
+| `livewire/users/user-form.blade.php` | Cosmetic only: a frozen copy still prints a stray `>` under the form |
+
+The team-members fix and the encrypted autocomplete search are PHP-only. They apply even if you keep frozen views. `hidePeople()` and `hideOrganizations()` stay on the suggest traits so that published copies of the old blades, which still call them, do not throw.
+
+`php artisan laravelcrm:upgrade` names your drifted published views on every deploy (added in 2.4.1), so this table is a cross-check rather than the only signal you will get.
+
+## Upgrading to 2.4.5
+
+The [Xero integration](/xero) is now optional. `dcblogdev/laravel-xero` has moved from this package's `require` to `suggest` plus `require-dev`, and `guzzlehttp/guzzle` now allows `^8.0`. **If you use Xero, you have to require the package yourself.** Read [the deploy-order note](#if-you-use-the-xero-integration-require-it-yourself-before-you-deploy) below before you upgrade.
+
+### No migrations, no new config keys
+
+This release changes only which packages composer installs and how the Xero integration behaves when one of them is absent. It adds no tables, columns or configuration keys, so
+
+```bash
+composer update venturedrake/laravel-crm
+php artisan laravelcrm:update
+```
+
+is the whole upgrade. `laravelcrm:update` still advances the `db_version` marker, so run it even though there is nothing to migrate — otherwise the system check reports the database as behind the code.
+
+### If you use the Xero integration, require it yourself *before* you deploy
+
+Nothing pulls `dcblogdev/laravel-xero` into your application any more. A production `composer install --no-dev` will not bring it in from this package's `require-dev` either. Add it to your own `composer.json`:
+
+```bash
+composer require dcblogdev/laravel-xero:1.1.3
+```
+
+Do that **in the same change as the upgrade**, not after it. If you upgrade first, the package is gone between the two deploys, and the integration stops syncing in that window without saying so.
+
+**In the app, nothing errors when it is missing — it goes quiet.** Every entry point now checks `XeroIntegration::installed()`. With the package absent, the `XeroToken` observer is never registered and `XeroTenant` is never pushed onto the `web` or `crm-api` middleware groups. `Product` / `Invoice` / `PurchaseOrder` sync becomes a no-op, and `php artisan laravelcrm:xero` exits non-zero with the install command instead of a fatal error. There is no banner. The one visible sign in the UI is **Settings → Integrations → Xero**, where an alert naming the missing package replaces the "Connect to Xero" button.
+
+**The scheduler is the exception.** The Xero syncs are scheduled whenever `xero.clientId` and `xero.clientSecret` are set, without checking that the package is installed. If you drop the package but keep a published `config/xero.php` with credentials set, `xero:keep-alive` fails as an undefined command every 5 minutes, and `laravelcrm:xero contacts` / `products` fail every 10. If you are not keeping Xero, remove `XERO_CLIENT_ID` and `XERO_CLIENT_SECRET` from your `.env`.
+
+Your data is not touched. Stored tokens and the `crm_xero_*` mirror rows survive, so installing the package restores the connection without re-authorising, as long as the stored refresh token has not expired in the meantime. See [Xero → When the package is not installed](/xero#when-the-package-is-not-installed).
+
+### Why: the package would not install on Guzzle 8
+
+`composer require venturedrake/laravel-crm` failed outright in any app that had resolved `guzzlehttp/guzzle` 8. That includes a stock Laravel 13.32+ app, since `laravel/framework` moved to `^7.8.2 || ^8.0` at that version. Composer named this package's own `^6.0|^7.0` constraint first, so it read as a one-line bump. But the binding cap came in transitively from `dcblogdev/laravel-xero`. **No version of it has ever allowed Guzzle 8**: 1.1.3 requires `^6|^7`, and later releases `^7.9.3`. There is no upstream release of it compatible with Guzzle 8.
+
+So the choice is yours rather than ours, and it is a real one:
+
+| You want | Do this | Consequence |
+|---|---|---|
+| Xero sync | `composer require dcblogdev/laravel-xero:1.1.3` | Your app stays on Guzzle 7 until that package ships a Guzzle 8 release |
+| Guzzle 8 / Laravel 13.32+ | Nothing | The Xero integration is inert, as described above |
+
+You cannot have both today.
+
+### Views to re-publish
+
+If you have published views into `resources/views/vendor/laravel-crm`, the view finder prefers your frozen copy, and this release changes one of them:
+
+| View | What you miss if you keep the old copy |
+|---|---|
+| `livewire/settings/integrations/xero/xero-connect.blade.php` | The "not installed" alert. A frozen copy still renders a **Connect to Xero** button with the package absent. It is not fatal — the route redirects back to this same screen — but it loops silently instead of naming what to install, which removes the only in-app signal this release gives you |
+
+`php artisan laravelcrm:upgrade` names your drifted published views on every deploy (added in 2.4.1), so this table is a cross-check rather than the only signal you will get.
+
+### If you copied blades out of `resources/v1/` during a v1 → v2 migration
+
+This release also gated `resources/v1/views/invoices/partials/fields.blade.php` and its purchase-order twin. Nothing in the package loads or publishes that tree; it is there for v1-era apps that copied the blades into their own `resources/views`. If yours is one of them, a copy taken before this release calls `\Dcblogdev\Xero\Facades\Xero::isConnected()` directly. With the package absent, that is a hard `Class "Dcblogdev\Xero\Facades\Xero" not found` on the invoice and purchase-order forms. Replace the call with `\VentureDrake\LaravelCrm\Support\XeroIntegration::connected()`, which works the same way, or keep `dcblogdev/laravel-xero` installed.
+
+## Upgrading to 2.4.4
+
+A performance patch release. The Owner filter used to send the whole users table to the filter drawer. On a large install, that made a single index page tens of megabytes and seconds to render. It now searches on the server.
+
+It also fixes a `500` on nine screens. Selecting an owner on the deal, lead and quote index pages and boards, and on the order, invoice and purchase-order index pages, threw an ambiguous-column `QueryException`. Those queries join `crm_people` and `crm_organizations`, and both tables have their own `user_owner_id`. The column is now table-qualified.
+
+### No migrations, no new config keys
+
+This release adds no tables or columns and no configuration keys, so
+
+```bash
+composer update venturedrake/laravel-crm
+php artisan laravelcrm:update
+```
+
+is the whole upgrade. `laravelcrm:update` still advances the `db_version` marker, so run it even though there is nothing to migrate — otherwise the system check reports the database as behind the code.
+
+### The Owner filter no longer has a "Select all"
+
+Type a name in the Owner filter and the matches come back from the database, up to 20 at a time. Before, you scrolled a list that was fully rendered on every request.
+
+The trade-off is that **Select all** is gone from that filter. It could only ever select the options that were rendered. On any install big enough for this change to matter, it was already selecting a subset rather than "all owners". **Clear** replaces it and empties the filter in one click. Owners you have already selected stay visible as chips, even when they fall outside the current search.
+
+No action is required unless you have published views; if you have, see the table below. Tell your support and sales people, since this is the one change in this release they will notice. See [Overview → List Views](/overview#list-views).
+
+### Views to re-publish
+
+If you have published views into `resources/views/vendor/laravel-crm`, the view finder prefers your frozen copy. This release changes the Owner `<x-mary-choices>` in 15 of them:
+
+| View | What you miss if you keep the old copy |
+|---|---|
+| The 12 index blades (`livewire/people/person-index.blade.php`, `livewire/organizations/organization-index.blade.php`, `livewire/leads/lead-index.blade.php`, and the same file under `.../deals`, `.../quotes`, `.../orders`, `.../invoices`, `.../deliveries`, `.../purchase-orders`, `.../products`, `.../tasks`, `.../teams`) | The `searchable` / `search-function="searchUsers"` / `clearable` Owner filter. **This one does not error — it goes quietly wrong.** A frozen copy keeps `allow-all` and has no search box, while the component behind it now returns at most 20 users. The filter lists only the first 20 owners alphabetically with no way to reach the rest, and **Select all** selects those 20 rather than everyone. On an install with more than 20 users, you must re-publish these |
+| The 3 board blades (`livewire/leads/lead-board.blade.php`, `livewire/deals/deal-board.blade.php`, `livewire/quotes/quote-board.blade.php`) | The same change, and the same silent failure |
+
+`php artisan laravelcrm:upgrade` names your drifted published views on every deploy (added in 2.4.1), so this table is a cross-check rather than the only signal you will get.
+
+The reverse combination *does* throw: MaryUI rejects `allow-all` together with `searchable`. That is why **Select all** could not stay alongside the new search.
+
+## Upgrading to 2.4.3
+
+A performance patch release. CRM index pages now run a bounded number of queries. Before, a 25-row page ran anywhere from 75 to nearly 500, because each table cell lazy-loaded its relation per row. On the demo database, `/people` drops from 171 queries to 15 and `/orders` from 486 to 22. The `getPrimaryEmail()` / `getPrimaryPhone()` / `getPrimaryAddress()` helpers keep their signatures and read eager-loaded relations when they are present, so your own callers get the saving without code changes.
+
+There are also two visible changes: the always-blank `next_activity` column is gone from the people and organizations index tables, and the header version badge now compares versions correctly.
+
+### No migrations, no new config keys
+
+This release adds no tables or columns and no configuration keys, so
+
+```bash
+composer update venturedrake/laravel-crm
+php artisan laravelcrm:update
+```
+
+is the whole upgrade. `laravelcrm:update` still advances the `db_version` marker, so run it even though there is nothing to migrate — otherwise the system check reports the database as behind the code.
+
+### Settings seeding runs once per version
+
+The settings-seeding pass used to run on every CRM page: 36 `crm_settings` queries plus an `information_schema` probe. It now sits behind a cache flag, which is the one new behaviour operators will see. The flag is stamped with the package version (`crm.settings-seeded.2.4.3`), so **the version bump re-arms it on its own**. The first CRM request after the upgrade runs the seeding pass once, and every request after that skips it. You do not have to clear anything by hand. The version in the key is what re-arms the pass. `laravelcrm:upgrade` clears only the config, route and view caches, not the application cache that holds this flag.
+
+The flag also has a 24-hour TTL, so a settings row deleted by hand comes back on the next day's first request rather than staying missing until the next release.
+
+**On a teams install the flag is partitioned by team.** Most of what the pass seeds is team-scoped — `organization_name`, `currency`, the document prefixes — so each team's first request after a deploy runs its own seeding pass, once. With a single shared flag, only the team that made the first request would have got its rows. See [Updates → Settings seeding](/updates#settings-seeding).
+
+### The version phone-home now has timeouts
+
+The CRM's version check posts to `api.laravelcrm.com`. Guzzle defaults both `connect_timeout` and `timeout` to "wait forever", and the install id is only recorded from a successful response. So **an install with outbound traffic to that host blocked put a blocking outbound POST with no timeout in front of every CRM page load.** The call is now capped at 2s connect / 3s total. An hour-long backoff is set before the request goes out, so a failure costs at most one attempt an hour rather than one per page view. The check also now runs inside the settings-seeding pass above, so it is only considered when that pass runs.
+
+No action is needed. This may explain a noticeable drop in page load times after the upgrade. If you had blocked the CRM's own checks to work around the stall, you no longer need to. See [Security → Outbound version check](/security#outbound-version-check).
+
+### `crm_usage_requests.visitor` values change format
+
+The visitor pseudonym was hashed with `crypt($ip, config('hashing.encryption_key'))`. That is not a stock Laravel config key, so the salt was null and PHP emitted a deprecation on every page view. The pseudonym is now a sha256 over your application key.
+
+**Rows written before the upgrade will not match rows written after it for the same visitor.** There is no migration and no backfill, and none is offered: the column is a pseudonym, not a key, and nothing joins on it. As a result, any report that counts *distinct* visitors over a window spanning the upgrade double-counts anyone who appears on both sides of it. If the number has to be exact, pick a window that starts after the deploy.
+
+### The version badge uses `version_compare()`
+
+The header popover compared version strings with `<`, and `'2.2.0' < '2.10.0'` is false when compared as strings. Once the minor version reached double digits, an install would show *"Latest Version"* even when a newer release existed. It now uses `version_compare()`, as `SystemCheckService` already did. The popover also reads its two settings from the cached settings map instead of running two raw queries per page.
+
+### Views to re-publish
+
+If you have published views into `resources/views/vendor/laravel-crm`, the view finder prefers your frozen copy, and this release changes:
+
+| View | What you miss if you keep the old copy |
+|---|---|
+| `livewire/people/person-index.blade.php`, `livewire/organizations/organization-index.blade.php` | The open / lost / won deal cells now read `open_deals_count`, `lost_deals_count` and `won_deals_count`, which the components fill with `withCount`. The components no longer eager-load `deals`, so **a frozen copy is slower than before the upgrade**: its `$person->deals->…` cells lazy-load every row's deals, about 25 extra queries on a 25-row page. Re-publish these. (The `next_activity` column is removed in the components, so it goes away whether or not you re-publish.) |
+| `livewire/quotes/quote-index.blade.php`, `livewire/users/user-index.blade.php` | Reads of the newly eager-loaded relations: `$quote->orders->count()` in place of `$quote->orders()->count()`, and `$user->roles->first()` in place of `$user->roles()->first()`. A frozen copy keeps those per-row queries |
+| `layouts/app.blade.php` | The `version_compare()` badge fix and the cached settings read. A frozen copy keeps two raw queries on every page, and shows the wrong badge once the minor version passes 2.10 |
+| `mail/templates/send-quote/*`, `send-invoice/*`, `send-purchase-order/*` (both `message` and `subject`) | The memoised settings read. The rendered output is identical but the query count is not, and these render once per row behind the index send buttons |
+
+`php artisan laravelcrm:upgrade` names your drifted published views on every deploy (added in 2.4.1), so this table is a cross-check rather than the only signal you will get.
+
 ## Upgrading to 2.4.2
 
 A two-fix patch release. Both fixes matter to someone: every PDF preview was failing on nginx and older Apache, and the public portal was rendering one tenant's branding on another tenant's document.
@@ -41,7 +248,7 @@ Boards stay reachable per team at `/p/features/team/{id}`, and bare `/p/features
 
 ### Views to re-publish: none
 
-**None.** Neither change in this release touches `resources/views`, so a published view cannot hide either fix. If you are coming from 2.4.0, the 2.4.1 table below still applies to you.
+**None.** Neither change in this release touches `resources/views`, so a published view cannot hide either fix. If you are coming from 2.4.0, the 2.4.1 table below still applies to you. Upgrading past 2.4.2, check the 2.4.3 – 2.4.6 tables above as well.
 
 ## Upgrading to 2.4.1
 
