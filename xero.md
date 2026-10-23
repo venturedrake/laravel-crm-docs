@@ -115,6 +115,17 @@ When products sync is enabled, this command:
 - **Two-way sync:** CRM products that don't exist in Xero (but have a product code) are automatically pushed to Xero.
 - Stores the Xero Item ID mapping in the `xero_items` table.
 
+The unit price pushed to Xero is the product's own price. Before 2.5.0 the push read the first matching row in `crm_product_prices`, and that table also holds [variation](/product-variations) prices, so a variation's price could be sent as the product's.
+
+## Line Items
+
+When an invoice or purchase order is pushed to Xero, each line is built by `VentureDrake\LaravelCrm\Support\XeroLineItem`:
+
+- **`Description`** is the line's `displayName()`: the product name, plus the [variation](/product-variations) name when the line has one (`Widget — Large`).
+- **`ItemCode`** is the variation's SKU only when an item with that code has already been synced from Xero. Otherwise it is the parent product's Xero item code, or failing that its product code, as before 2.5.0.
+
+Variations are never created as Xero items. If you want a variation to post against its own Xero item, create that item in Xero with the variation's SKU as its code and let the [products sync](#products-sync) bring it across. Invoices pulled in from Xero are stored without a variation.
+
 ## Scheduled Syncs
 
 The following syncs are auto-registered in the service provider's scheduler:

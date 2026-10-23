@@ -4,7 +4,7 @@
 
 ## Overview
 
-Products represent goods or services that can be sold. Products can have multiple price points (per currency), variations, and belong to [Product Categories](/product-categories). Products are referenced as line items on [Deals](/deals), [Quotes](/quotes), [Orders](/orders), and [Invoices](/invoices).
+Products represent goods or services that can be sold. Products can have multiple price points (per currency), [variations](/product-variations), and belong to [Product Categories](/product-categories). Products are referenced as line items on [Deals](/deals), [Quotes](/quotes), [Orders](/orders), [Invoices](/invoices) and [Purchase Orders](/purchase-orders).
 
 **Model:** `VentureDrake\LaravelCrm\Models\Product`
 **Table:** `{prefix}products` (default: `crm_products`)
@@ -27,8 +27,9 @@ Products represent goods or services that can be sold. Products can have multipl
 
 | Method | Type | Related Model | Description |
 |---|---|---|---|
-| `productPrices()` | `hasMany` | `ProductPrice` | Prices per currency |
-| `productVariations()` | `hasMany` | `ProductVariation` | Product variations |
+| `productPrices()` | `hasMany` | `ProductPrice` | Product-level prices per currency (excludes variation prices since 2.5.0) |
+| `productVariations()` | `hasMany` | `ProductVariation` | [Variations](/product-variations), in display order |
+| `activeProductVariations()` | `hasMany` | `ProductVariation` | Active variations only |
 | `productCategory()` | `belongsTo` | `ProductCategory` | Category |
 | `taxRate()` | `belongsTo` | `TaxRate` | Default tax rate |
 | `ownerUser()` | `belongsTo` | `User` | Owner |
@@ -42,6 +43,20 @@ Returns the default price for the configured system currency.
 ```php
 $price = $product->getDefaultPrice();
 ```
+
+### getPrimaryPrice()
+
+Returns the default price, or failing that whichever product-level price row the product has. The edit form, its save and the show page all read this row. A product priced only in another currency therefore keeps that price on edit, rather than gaining a second, empty one.
+
+### unitPriceFor()
+
+Returns the unit price, in cents, for a line of this product. A [variation's](/product-variations#pricing) price in the given currency wins. Otherwise the line falls back to the product's default price, exactly as a line with no variation.
+
+```php
+$cents = $product->unitPriceFor($variation, 'USD'); // $variation may be null
+```
+
+> **Note:** Variation prices live in the same `crm_product_prices` table. Since 2.5.0, `productPrices()` and the `ProductPrice::default()` scope exclude rows with a `product_variation_id`. Before that, `getDefaultPrice()`, the API product payload and the [Xero](/xero) product sync read the first matching row, which could be a variation's price. The `default()` scope also compared the currency against a `Setting` model rather than its value.
 
 ## Scopes
 
@@ -74,6 +89,10 @@ $product->productPrices()->create([
 ]);
 ```
 
+## Variations
+
+The product create and edit form has a **Variations** card for adding, editing, reordering, deactivating and removing variations, and the show page lists them. Each variation has its own SKU, barcode, price and active flag. See [Product Variations](/product-variations).
+
 ## Deleting a Product
 
 Deleting a product **soft-deletes** it. The distinction matters because a product is referenced by every quote, order, invoice, purchase order, delivery and deal line ever raised against it:
@@ -85,7 +104,7 @@ Readable on the documents that already reference it, not choosable on new ones. 
 
 ## Searching & Filtering
 
-Searchable by `name`. Filterable by `user_owner_id` and `labels.id`.
+Searchable by `name`. Since 2.5.0 the products index also matches a [variation's](/product-variations) SKU, so searching for it finds the parent product. Filterable by `user_owner_id` and `labels.id`.
 
 ## Traits
 

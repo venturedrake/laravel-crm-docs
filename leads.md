@@ -24,7 +24,7 @@ Leads represent potential business opportunities that have not yet been qualifie
 | `lead_source_id` | `integer` | Foreign key to lead source |
 | `person_id` | `integer` | Associated person |
 | `organization_id` | `integer` | Associated organisation |
-| `client_id` | `integer` | Associated client |
+| `customer_id` | `integer` | v1 [customer](/customers), if any (`client_id` before the v2 upgrade) |
 | `user_owner_id` | `integer` | Owner user |
 | `user_assigned_id` | `integer` | Assigned user |
 | `pipeline_id` | `integer` | Pipeline the lead belongs to |
@@ -38,7 +38,7 @@ Leads represent potential business opportunities that have not yet been qualifie
 |---|---|---|---|
 | `person()` | `belongsTo` | `Person` | Associated contact person |
 | `organization()` | `belongsTo` | `Organization` | Associated organisation |
-| `client()` | `belongsTo` | `Client` | Associated client |
+| `customer()` | `belongsTo` | `Customer` | v1 [customer](/customers), on `customer_id` |
 | `leadStatus()` | `belongsTo` | `LeadStatus` | Current status |
 | `leadSource()` | `belongsTo` | `LeadSource` | Source of the lead |
 | `pipeline()` | `belongsTo` | `Pipeline` | Pipeline |

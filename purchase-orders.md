@@ -54,7 +54,7 @@ Reached from the purchase order via `purchaseOrderLines()`.
 |---|---|---|
 | `external_id` | `string` | UUID |
 | `product_id` | `integer` | The product being purchased |
-| `product_variation_id` | `integer` | Optional [product variation](/product-attributes) |
+| `product_variation_id` | `integer` | Optional [product variation](/product-variations) |
 | `description` | `text` | Optional line description |
 | `quantity` | `decimal(15,3)` | Quantity, to at most 3 decimal places |
 | `price` | `integer` | Unit price (stored in cents) |
@@ -62,11 +62,24 @@ Reached from the purchase order via `purchaseOrderLines()`.
 | `tax_amount` | `integer` | Tax on the line (stored in cents) |
 | `amount` | `integer` | Line total (stored in cents) |
 | `currency` | `string(3)` | Currency code |
+| `comments` | `string` | Optional per-line note (column added in 2.5.0) |
+| `order_product_id` | `integer` | The order line this was drawn from, if any (column added in 2.5.0) |
 | `order` | `integer` | Position of the line on the document |
 
 > **Note:** `quantity` is `decimal(15,3)`, so a purchase order line can carry `3.5` Kg or `0.25` L. The `HasDecimalQuantity` trait casts it, which means `$line->quantity` reads back as a PHP `float`.
 
 > **Note:** A **soft-deleted product stays readable** on the purchase orders that already reference it. `PurchaseOrderLine::product()` resolves `withTrashed()`, so the line keeps its description on the show view, in all 14 PDF templates and in the [Xero](/xero) sync. The product pickers query `Product::` directly, so a deleted product stays out of selection lists. See [Products](/products).
+
+> **Note:** A line can carry a [product variation](/product-variations), picked and priced as on the other document types. A purchase order raised from an order keeps the order line's variation, and the [Xero](/xero#line-items) sync sends the variation name in the line description.
+
+### Saving lines before 2.5.0
+
+Two bugs made purchase-order lines unreliable before 2.5.0:
+
+- **Saving a purchase order with lines failed on a real database.** `PurchaseOrderService::create()` wrote `comments` and `order_product_id` to `crm_purchase_order_lines`, but no migration had added either column. The 2.5.0 upgrade adds both.
+- **Edits to lines were silently lost.** `PurchaseOrderService::update()` read a `purchaseOrderLines` key that the form never sends. It now reads `products`, using the same row keys as `create()`: matched lines are updated, new ones added, and lines no longer submitted removed. It only matches lines that belong to the purchase order being edited.
+
+A dynamic product typed into the purchase-order form is also named after the typed text again.
 
 ## PDF Generation
 

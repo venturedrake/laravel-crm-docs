@@ -24,7 +24,7 @@ Deals represent qualified business opportunities with an estimated value and exp
 | `closed_status` | `string` | Won/lost status |
 | `person_id` | `integer` | Associated person |
 | `organization_id` | `integer` | Associated organisation |
-| `client_id` | `integer` | Associated client |
+| `customer_id` | `integer` | v1 [customer](/customers), if any (`client_id` before the v2 upgrade) |
 | `user_owner_id` | `integer` | Owner user |
 | `user_assigned_id` | `integer` | Assigned user |
 | `pipeline_id` | `integer` | Pipeline |
@@ -38,7 +38,7 @@ Deals represent qualified business opportunities with an estimated value and exp
 |---|---|---|---|
 | `person()` | `belongsTo` | `Person` | Contact person |
 | `organization()` | `belongsTo` | `Organization` | Organisation |
-| `client()` | `belongsTo` | `Client` | Client |
+| `client()` | `belongsTo` | `Customer` | v1 leftover; always `null` — see [Customers](/customers#from-other-models) |
 | `dealProducts()` | `hasMany` | `DealProduct` | Line items |
 | `pipeline()` | `belongsTo` | `Pipeline` | Pipeline |
 | `pipelineStage()` | `belongsTo` | `PipelineStage` | Pipeline stage |
@@ -46,6 +46,16 @@ Deals represent qualified business opportunities with an estimated value and exp
 | `customFieldValues()` | `morphMany` | `FieldValue` | Custom field values |
 | `ownerUser()` | `belongsTo` | `User` | Owner |
 | `assignedToUser()` | `belongsTo` | `User` | Assigned user |
+
+## Products
+
+A deal's products are `DealProduct` lines, reached via `dealProducts()`. Since 2.5.0 a line can carry a [product variation](/product-variations): once a product with active variations is chosen on the deal form, a variation select appears beside it, and picking one prices the line from the variation's price in the deal's currency. The deal show page prints the line as `Product — Variation`.
+
+Creating a [Quote](/quotes#creating-a-quote-from-a-deal) from the deal starts the quote with the deal's lines, variations included.
+
+## Linked Contacts
+
+Since 2.5.0, saving a deal with both a contact person and an organization links the two as related contacts. See [People → Related contacts](/people#related-contacts).
 
 ## Creating a Deal
 

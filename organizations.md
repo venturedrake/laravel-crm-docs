@@ -36,10 +36,14 @@ Organisations represent companies or business entities. An organisation can have
 | `addresses()` | `morphMany` | `Address` | Physical addresses |
 | `labels()` | `morphToMany` | `Label` | Labels/tags |
 | `contacts()` | `morphMany` | `Contact` | Contact records |
-| `client()` | `morphOne` | `Client` | Client record |
+| `client()` | `morphOne` | `Customer` | v1 leftover; throws a `QueryException` — see [Customers](/customers#from-other-models) |
 | `organizationType()` | `belongsTo` | `OrganizationType` | Type classification |
 | `timezone()` | `belongsTo` | `Timezone` | Timezone |
 | `ownerUser()` | `belongsTo` | `User` | Owner |
+
+## Related Contacts
+
+Since 2.5.0, saving a lead, deal, quote, order, invoice or purchase order with both a contact person and an organization links the two as related contacts, so each one lists the other on its show page. See [People → Related contacts](/people#related-contacts).
 
 ## Helper Methods
 

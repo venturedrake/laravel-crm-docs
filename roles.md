@@ -34,7 +34,7 @@ They diverge on the rest:
 | `view` / `reply crm chat` | Yes | Yes |
 | `delete crm chat`, `manage crm chat widgets` | Yes | No |
 | `manage crm feature statuses` | Yes | No |
-| `crm products`, `crm product categories`, `crm product attributes` | No | No |
+| `crm products`, `crm product categories` | No | No |
 | `crm monitors` | No | No |
 | `crm users`, `crm teams`, `crm roles`, `crm permissions` | No | No |
 | `crm settings`, `view crm updates` | No | No |

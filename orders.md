@@ -25,7 +25,7 @@ Orders represent confirmed sales. An order can be created from a [Quote](/quotes
 | `total` | `integer` | Total (stored in cents) |
 | `person_id` | `integer` | Contact person |
 | `organization_id` | `integer` | Organisation |
-| `client_id` | `integer` | Client |
+| `customer_id` | `integer` | v1 [customer](/customers), if any (`client_id` before the v2 upgrade) |
 | `lead_id` | `integer` | Source lead |
 | `deal_id` | `integer` | Source deal |
 | `quote_id` | `integer` | Source quote |
@@ -38,7 +38,7 @@ Orders represent confirmed sales. An order can be created from a [Quote](/quotes
 
 ### title
 
-Returns a formatted title with the monetary total and client/organisation name.
+Returns a formatted title with the monetary total and the organisation name, or the person name when there is no organisation.
 
 ```php
 $order->title; // "$1,500.00 - Acme Corp"
@@ -50,7 +50,7 @@ $order->title; // "$1,500.00 - Acme Corp"
 |---|---|---|---|
 | `person()` | `belongsTo` | `Person` | Contact person |
 | `organization()` | `belongsTo` | `Organization` | Organisation |
-| `client()` | `belongsTo` | `Client` | Client |
+| `client()` | `belongsTo` | `Customer` | v1 leftover; always `null` — see [Customers](/customers#from-other-models) |
 | `deal()` | `belongsTo` | `Deal` | Source deal |
 | `quote()` | `belongsTo` | `Quote` | Source quote |
 | `orderProducts()` | `hasMany` | `OrderProduct` | Line items |
@@ -104,7 +104,7 @@ Reached from the order via `orderProducts()`.
 |---|---|---|
 | `external_id` | `string` | UUID used by the [API](/api-quotes#nested-line-items) |
 | `product_id` | `integer` | The product being ordered |
-| `product_variation_id` | `integer` | Optional [product variation](/product-attributes) |
+| `product_variation_id` | `integer` | Optional [product variation](/product-variations) |
 | `quote_product_id` | `integer` | The quote line this was drawn from, if any |
 | `quantity` | `decimal(15,3)` | Quantity, to at most 3 decimal places |
 | `price` | `integer` | Unit price (stored in cents) |
@@ -118,6 +118,8 @@ Reached from the order via `orderProducts()`.
 > **Note:** `quantity` is `decimal(15,3)`, so an order line can carry `3.5` Kg or `0.25` L. The `HasDecimalQuantity` trait casts it, which means `$line->quantity` reads back as a PHP `float`.
 
 > **Note:** A **soft-deleted product stays readable** on the orders that already reference it. `OrderProduct::product()` resolves `withTrashed()`, so the line keeps its description on the show view, in all 14 PDF templates and in the [Xero](/xero) sync. The product pickers query `Product::` directly, so a deleted product stays out of selection lists. See [Products](/products).
+
+> **Note:** A line can carry a [product variation](/product-variations). The variation select appears once a product with active variations is chosen, and picking one prices the line in the order's currency. The show page and PDF print `Product — Variation`, and the show page also prints the variation's SKU when it has one. The variation is carried across from the quote, and on to invoices, purchase orders and delivery lines.
 
 ### Drawing down an order line
 

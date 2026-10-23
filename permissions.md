@@ -44,13 +44,15 @@ view crm leads      create crm leads      edit crm leads      delete crm leads
 
 ## Inventory
 
-The seeder creates **156** permissions: 37 entities with a full create / view / edit / delete quad, plus 8 that do not follow the pattern.
+The seeder creates **152** permissions: 36 entities with a full create / view / edit / delete quad, plus 8 that do not follow the pattern.
+
+> **Note:** Before 2.5.0 it created 156. The four `crm product attributes` permissions guarded a page that never worked, and 2.5.0 stops seeding them. A `database/updates` migration also deletes them from existing installs, along with their role and user assignments — see [Upgrading to 2.5.0](/upgrading#product-attributes-removed).
 
 ### The quads
 
 Each of these has all four of `create crm …`, `view crm …`, `edit crm …` and `delete crm …`:
 
-`crm activities`, `crm calls`, `crm contacts`, `crm customers`, `crm deals`, `crm deliveries`, `crm email-campaigns`, `crm email-templates`, `crm features`, `crm fields`, `crm files`, `crm integrations`, `crm invoices`, `crm labels`, `crm lead sources`, `crm leads`, `crm lunches`, `crm meetings`, `crm monitors`, `crm notes`, `crm orders`, `crm organizations`, `crm people`, `crm permissions`, `crm pipelines`, `crm product attributes`, `crm product categories`, `crm products`, `crm purchase orders`, `crm quotes`, `crm roles`, `crm sms-campaigns`, `crm sms-templates`, `crm tasks`, `crm tax rates`, `crm teams`, `crm users`
+`crm activities`, `crm calls`, `crm contacts`, `crm customers`, `crm deals`, `crm deliveries`, `crm email-campaigns`, `crm email-templates`, `crm features`, `crm fields`, `crm files`, `crm integrations`, `crm invoices`, `crm labels`, `crm lead sources`, `crm leads`, `crm lunches`, `crm meetings`, `crm monitors`, `crm notes`, `crm orders`, `crm organizations`, `crm people`, `crm permissions`, `crm pipelines`, `crm product categories`, `crm products`, `crm purchase orders`, `crm quotes`, `crm roles`, `crm sms-campaigns`, `crm sms-templates`, `crm tasks`, `crm tax rates`, `crm teams`, `crm users`
 
 ### The rest
 
@@ -72,7 +74,7 @@ Note there is no `create crm chat` or `edit crm chat`: a conversation is created
 Every CRM entity has a policy in `src/Policies/` that maps these permission names onto Laravel's ability names. Two are worth calling out:
 
 - **`ActivityPolicy`** is new in 2.4.0. The `activities/*` route group previously shipped with no gate at all.
-- **`ProductAttributePolicy`** existed but was never registered, so every `ProductAttribute` authorization check silently fell through to deny. It is registered now — see [Product Attributes](/product-attributes).
+- **`ProductAttributePolicy`** was removed in 2.5.0, together with the unfinished Product Attributes page it guarded and its four permissions. See [Product Variations → Product Attributes (removed)](/product-variations#product-attributes-removed). Product variations have no policy or permissions of their own: they are authorised against the parent product.
 
 `MonitorCheckPolicy` carries no permissions of its own; it delegates each method to `MonitorPolicy` against the check's parent monitor.
 

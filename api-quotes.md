@@ -69,6 +69,8 @@ Accepted on `POST` / `PUT` (`*` = required on `POST`):
   "id": "uuid",
   "product_id": "uuid",
   "product":    { "id": "uuid", "name": "Annual subscription", "code": "SUB-1Y" },
+  "product_variation_id": "uuid",
+  "variation":  { "id": "uuid", "name": "Large", "code": "SUB-1Y-L" },
   "quantity": 3.5,
   "unit_price": 100.00,
   "amount": 350.00,
@@ -86,6 +88,7 @@ Accepted on `POST` / `PUT` (`*` = required on `POST`):
 {
   "id": "uuid (optional, update only)",
   "product_id": "uuid (required)",
+  "product_variation_id": "uuid (optional)",
   "quantity": 3.5,
   "unit_price": 100.00,
   "amount": 350.00,
@@ -97,6 +100,17 @@ Accepted on `POST` / `PUT` (`*` = required on `POST`):
 - **Update in place:** include the existing line's `id` (UUID). The line is updated.
 - **`line_items` on a `PUT` is the complete set.** Any existing line whose `id` does not appear in the payload is deleted. To replace every line, send the new lines with no `id` on any of them — the old ones go. To leave the lines untouched, omit `line_items` from the payload entirely.
 - `product_id`, `quantity`, `unit_price`, and `amount` are required on every line item. `quantity` accepts up to 3 decimal places — see below.
+
+### Product variation id
+
+`product_variation_id` (since 2.5.0) is optional: the UUID of one of `product_id`'s [variations](/api-products#variations).
+
+- **A variation of a different product, or one from another team, is a `422`** on `line_items.N.product_variation_id`.
+- **Lines are replaced as a whole**, so a line sent without `product_variation_id` has no variation.
+- **Deleted variations:** a line already on a variation that has since been deleted keeps it when re-sent with the same `id`. A new line cannot pick a deleted variation, and is stored without one.
+- **`unit_price` is still whatever you send.** The API does not price the line from the variation for you.
+
+In responses, `product_variation_id` and `variation` are both `null` when the line has no variation.
 
 ### Decimal quantity
 

@@ -4,7 +4,7 @@
 
 ## Overview
 
-People represent individual contacts in the CRM. A person can belong to an [Organisation](/organizations), be associated with [Leads](/leads) and [Deals](/deals), and become a [Customer](/customers) via the polymorphic Client model. Personal fields support optional encryption for privacy.
+People represent individual contacts in the CRM. A person can belong to an [Organisation](/organizations) and be associated with [Leads](/leads) and [Deals](/deals). Personal fields support optional encryption for privacy.
 
 **Model:** `VentureDrake\LaravelCrm\Models\Person`
 **Table:** `{prefix}people` (default: `crm_people`)
@@ -47,8 +47,25 @@ $person->name; // "John Smith"
 | `addresses()` | `morphMany` | `Address` | Physical addresses |
 | `labels()` | `morphToMany` | `Label` | Labels/tags |
 | `contacts()` | `morphMany` | `Contact` | Contact records |
-| `client()` | `morphOne` | `Client` | Client record |
+| `client()` | `morphOne` | `Customer` | v1 leftover; throws a `QueryException` — see [Customers](/customers#from-other-models) |
 | `ownerUser()` | `belongsTo` | `User` | Owner |
+
+## Related Contacts
+
+The **Related organizations** card on a person's show page, and the **Related people** card on an organization's, list `Contact` records reached via `contacts()`. A link is stored in both directions, one row on each side.
+
+Since 2.5.0, saving a lead, deal, quote, order, invoice or purchase order with both a contact person and an organization links them as related contacts, so each lists the other. This applies whether the person and organization are new or picked from the autocomplete. `PersonService::linkToOrganization()` makes the link:
+
+```php
+app(\VentureDrake\LaravelCrm\Services\PersonService::class)
+    ->linkToOrganization($person, $organization);
+```
+
+- **An existing link is not duplicated.** Each side is a `firstOrCreate()`.
+- **Nothing is unlinked.** Changing the person or organization on a record keeps the old link.
+- **There is no backfill.** Records saved before 2.5.0 stay unlinked until they are saved again.
+
+Before 2.5.0, saving such a record never linked the two ([#94](https://github.com/venturedrake/laravel-crm/issues/94)).
 
 ## Helper Methods
 

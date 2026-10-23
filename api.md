@@ -63,7 +63,7 @@ class User extends Authenticatable
 php artisan route:list --path=crm/api
 ```
 
-You should see 8 resourceful entities (5 verbs each), plus the 3 auth routes.
+You should see 8 resourceful entities (5 verbs each), the 5 nested [product variation](/api-products#variations) routes (`products/{product}/variations`), plus the 3 auth routes.
 
 ## Authentication
 

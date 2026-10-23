@@ -80,7 +80,7 @@ Reached from the invoice via `invoiceLines()`.
 |---|---|---|
 | `external_id` | `string` | UUID used by the [API](/api-quotes#nested-line-items) |
 | `product_id` | `integer` | The product being invoiced |
-| `product_variation_id` | `integer` | Optional [product variation](/product-attributes) |
+| `product_variation_id` | `integer` | Optional [product variation](/product-variations) |
 | `description` | `text` | Optional line description |
 | `quantity` | `decimal(15,3)` | Quantity, to at most 3 decimal places |
 | `price` | `integer` | Unit price (stored in cents) |
@@ -93,6 +93,8 @@ Reached from the invoice via `invoiceLines()`.
 > **Note:** `quantity` is `decimal(15,3)`, so an invoice line can carry `3.5` Kg or `0.25` L. The `HasDecimalQuantity` trait casts it, which means `$line->quantity` reads back as a PHP `float`.
 
 > **Note:** A **soft-deleted product stays readable** on the invoices that already reference it. `InvoiceLine::product()` resolves `withTrashed()`, so the line keeps its description on the show view, in all 14 PDF templates and in the [Xero](/xero) sync. The product pickers query `Product::` directly, so a deleted product stays out of selection lists. See [Products](/products).
+
+> **Note:** A line can carry a [product variation](/product-variations). The variation select appears once a product with active variations is chosen, and picking one prices the line in the invoice's currency. The show page, PDF, emailed invoice and portal print `Product — Variation`, and an invoice raised from an order keeps the order line's variation. The [Xero](/xero#line-items) sync sends the variation name in the line description.
 
 When an invoice is raised from an [Order](/orders#drawing-down-an-order-line), the quantity is capped at the order line's outstanding remainder, recomputed server-side from the invoices already raised against it.
 

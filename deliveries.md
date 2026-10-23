@@ -69,6 +69,8 @@ Reached from the delivery via `deliveryProducts()`.
 
 A delivery line references an [order line](/orders#drawing-down-an-order-line) rather than a product directly, which is what makes partial deliveries possible.
 
+Since 2.5.0 a delivery line prints the [product variation](/product-variations) of the order line it delivers. `DeliveryProduct::displayName()` and `displayCode()` read from the order line, so the show page and PDF print `Product — Variation`, and the show page also prints the variation's SKU when it has one.
+
 > **Note:** `quantity` is `decimal(15,3)`, so a delivery can record `3.5` Kg or `0.25` L. The `HasDecimalQuantity` trait casts it, which means `$line->quantity` reads back as a PHP `float`.
 
 > **Note:** A **soft-deleted product stays readable** on the deliveries that already reference it. `DeliveryProduct::orderProduct()` resolves `withTrashed()`, and the order line's own product relation does too, so the line keeps its description on the show view and in all 14 PDF templates. See [Products](/products).

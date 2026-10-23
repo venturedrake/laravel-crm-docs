@@ -57,13 +57,13 @@ The sidebar navigation is organized into the following sections:
 - **Monitors** — Uptime and SSL monitoring for HTTP/HTTPS endpoints. See [Monitoring](/monitoring).
 
 ### Catalogue
-- **Products** — Product catalogue with search and autocomplete.
+- **Products** — Product catalogue with search and autocomplete, and [variations](/product-variations) such as sizes or colours.
 
 ### Administration
 - **Settings** — [General settings](/settings) (split across a tab per entity), [PDF templates](/pdf-templates), roles and permissions, pipelines, pipeline stages, product categories, tax rates, labels, lead sources, custom fields, custom field groups, chat widgets, and integrations (Xero, ClickSend).
 - **Updates** — Installed version, available updates, and the commands to run. See [Updates](/updates).
 
-> **Note:** [Customers](/customers) have full CRUD routes under `/crm/customers` but no sidebar item in the rebuilt 2.x navigation — reach them by URL or from a linked person or organisation. The underlying model is named `Client`; the routes, permissions and UI all say *Customers*.
+> **Note:** There is no Customers screen in 2.x. Use People and Organizations instead. The leftover v1 `/crm/customers` routes had no sidebar item and never worked in v2, and 2.5.0 removed them. See [Customers](/customers).
 
 ## Common UI Patterns
 
@@ -96,7 +96,7 @@ Each entity's detail page typically shows:
 Create and edit forms use a consistent card-based layout with:
 
 - **Autocomplete Fields** — People, organisations, and products use autocomplete for quick selection. If you pick a person or organisation and then edit the name, the field unlinks from the picked record and shows **New**, so saving creates a new record rather than attaching the old one.
-- **Dynamic Product Lines** — Deals, quotes, orders, invoices, deliveries, and purchase orders support adding multiple product line items with quantity, price, tax rate, and subtotal calculations. Quantities accept up to three decimal places.
+- **Dynamic Product Lines** — Deals, quotes, orders, invoices, deliveries, and purchase orders support adding multiple product line items with quantity, price, tax rate, and subtotal calculations. Quantities accept up to three decimal places. On every type except deliveries, which draw down order lines, a product with active [variations](/product-variations) gets a variation select beside it, and picking one reprices the line.
 - **PDF Template Picker** — Quote, order, invoice, delivery, and purchase-order forms carry a **PDF template** select pinning one of the five shipped layouts to that record, or leaving it to follow the Settings default. See [PDF Templates](/pdf-templates).
 - **Address Fields** — Structured address input with multiple address support.
 - **Email & Phone Fields** — Multiple email addresses and phone numbers with type selection (work, home, etc.).

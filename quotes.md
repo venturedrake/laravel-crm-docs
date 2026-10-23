@@ -30,7 +30,7 @@ Quotes represent formal proposals sent to clients with pricing and terms. A quot
 | `rejected_at` | `datetime` | When rejected |
 | `person_id` | `integer` | Contact person |
 | `organization_id` | `integer` | Organisation |
-| `client_id` | `integer` | Client |
+| `customer_id` | `integer` | v1 [customer](/customers), if any (`client_id` before the v2 upgrade) |
 | `deal_id` | `integer` | Source deal |
 | `pipeline_id` | `integer` | Pipeline |
 | `pipeline_stage_id` | `integer` | Pipeline stage |
@@ -43,7 +43,7 @@ Quotes represent formal proposals sent to clients with pricing and terms. A quot
 |---|---|---|---|
 | `person()` | `belongsTo` | `Person` | Contact person |
 | `organization()` | `belongsTo` | `Organization` | Organisation |
-| `client()` | `belongsTo` | `Client` | Client |
+| `client()` | `belongsTo` | `Customer` | v1 leftover; always `null` — see [Customers](/customers#from-other-models) |
 | `deal()` | `belongsTo` | `Deal` | Source deal |
 | `quoteProducts()` | `hasMany` | `QuoteProduct` | Line items |
 | `orders()` | `hasMany` | `Order` | Orders generated from this quote |
@@ -89,7 +89,7 @@ Reached from the quote via `quoteProducts()`.
 |---|---|---|
 | `external_id` | `string` | UUID used by the [API](/api-quotes#nested-line-items) |
 | `product_id` | `integer` | The product being quoted |
-| `product_variation_id` | `integer` | Optional [product variation](/product-attributes) |
+| `product_variation_id` | `integer` | Optional [product variation](/product-variations) |
 | `quantity` | `decimal(15,3)` | Quantity, to at most 3 decimal places |
 | `price` | `integer` | Unit price (stored in cents) |
 | `tax_rate` | `decimal` | Tax rate percentage applied to the line |
@@ -102,6 +102,14 @@ Reached from the quote via `quoteProducts()`.
 > **Note:** `quantity` is `decimal(15,3)`, so a product sold by weight or volume can be quoted at `3.5` Kg or `0.25` L. The `HasDecimalQuantity` trait casts it, which means `$line->quantity` reads back as a PHP `float` — a whole quantity of 2 compares as `2.0`. Values are rounded to 3 decimal places on write, and a whole quantity still renders as `2` rather than `2.000`.
 
 > **Note:** A **soft-deleted product stays readable** on the quotes that already reference it. `QuoteProduct::product()` resolves `withTrashed()`, so the line keeps its description on the show view, in all 14 PDF templates and in the [Xero](/xero) sync. The product pickers query `Product::` directly, so a deleted product stays out of selection lists — readable on the documents that already reference it, not choosable on new ones. See [Products](/products).
+
+### Variations
+
+When a line's product has active [variations](/product-variations), a variation select appears beside the product. Picking one prices the line from the variation's price in the quote's currency, falling back to the product price. The show page, the PDF, the emailed quote and the portal print the line as `Product — Variation` (`displayName()`), and the show page prints the variation's SKU when it has one (`displayCode()`). Converting the quote to an order carries the variation across.
+
+### Creating a quote from a deal
+
+Since 2.5.0 a quote created from a [Deal](/deals) starts with the deal's lines — product, variation, quantity and price — and they stay editable. Before, the quote form started empty and the deal's products were dropped.
 
 ## PDF Generation
 

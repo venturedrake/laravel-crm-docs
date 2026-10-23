@@ -4,6 +4,93 @@
 
 Two things to read before any upgrade: the **version-specific notes** for the release you are moving to, and [Upgrading Within 2.x](#upgrading-within-2-x), which is the same every release. Read the version notes **first** — some releases change who is allowed to do what, and the failure mode is a `403` for a user who could previously click the button.
 
+## Upgrading to 2.5.0
+
+A minor release. It adds [product variations](/product-variations), with a new `products/{product}/variations` [API sub-resource](/api-products#variations). It also removes two route groups that never worked in v2 (Product Attributes and Customers), and fixes purchase-order lines, contact linking and three observers. It is a minor rather than a patch release because of the new feature and API sub-resource.
+
+### Three migrations, no new config keys
+
+The upgrade is still
+
+```bash
+composer update venturedrake/laravel-crm
+php artisan laravelcrm:update
+```
+
+but it runs three new migrations from `database/updates`. You do not need to publish anything, and a plain `php artisan migrate` runs them too:
+
+| Migration | What it does |
+|---|---|
+| `add_code_and_audit_columns_to_laravel_crm_product_variations_table` | Adds `code` (indexed), `barcode`, `order`, `active` (default `true`) and the `user_created_id` / `user_updated_id` / `user_deleted_id` / `user_restored_id` columns to `crm_product_variations` |
+| `add_comments_and_order_product_id_to_laravel_crm_purchase_order_lines_table` | Adds `comments` and `order_product_id` to `crm_purchase_order_lines`. See [Purchase-order lines](#purchase-order-lines-now-save) below |
+| `remove_product_attribute_permissions_from_laravel_crm` | Deletes the four `crm product attributes` permissions. See [Product Attributes removed](#product-attributes-removed) |
+
+The two column migrations check for each column before adding it. They are safe on installs that added any of these columns by hand, running them twice does nothing, and neither changes existing rows.
+
+The version bump to `2.5.0` re-arms the [settings-seeding pass](/updates#settings-seeding) and the update banner, as usual.
+
+### Product Attributes removed
+
+The unfinished **Settings → Product Attributes** page is gone. It was a v1 stub with no table and no views, and every route errored with `Table 'product_attributes' doesn't exist` ([#53](https://github.com/venturedrake/laravel-crm/issues/53)). Removed with it: the `laravel-crm.product-attributes.*` routes, `ProductAttributeController`, the `ProductAttribute` model, `ProductAttributePolicy`, the empty index view, both Settings nav entries and the unused `product_attribute*` lang keys.
+
+**Host code that calls `route('laravel-crm.product-attributes.index')`, or any sibling, now throws `RouteNotFoundException`.** Search your app for `product-attributes` and `ProductAttribute` before you deploy.
+
+The seeder no longer creates the four `crm product attributes` permissions. On existing installs, the role form lists every permission, so they showed up as checkboxes that granted nothing. The `remove_product_attribute_permissions_from_laravel_crm` migration deletes them, along with their `role_has_permissions` / `model_has_permissions` rows, and clears Spatie's permission cache. It does not touch a `product_attributes` table your application may have created itself. **Its `down()` is lossy:** it recreates the permissions, but cannot restore which roles held them. The seeded total drops from 156 to 152 — see [Permissions](/permissions#inventory).
+
+To record product details such as material, brand or warranty, attach [custom fields](/custom-fields) to Products. Product variations are a separate feature and are not affected.
+
+### Customers routes removed
+
+The leftover v1 `/crm/customers` pages are gone, along with their `laravel-crm.customers.*` routes, `CustomerController`, the empty `customers/index` view and the unused `StoreClientRequest` / `UpdateClientRequest` classes. They never worked in v2: the index failed with `Call to undefined method Illuminate\Database\Eloquent\Builder::sortable()` ([#93](https://github.com/venturedrake/laravel-crm/issues/93)), and the other pages pointed at views that no longer exist.
+
+**Host code that calls `route('laravel-crm.customers.index')`, or any sibling, now throws `RouteNotFoundException`.** Use People and Organizations instead.
+
+No migration runs. The `customers` table, the `Customer` model, its observer and policy, and the `crm customers` permissions all stay, because the V1 → V2 upgrade still migrates that table and leads, deals, quotes and orders still carry `customer_id`. See [Customers](/customers).
+
+### Product variations
+
+A product can now have named variations, each with its own SKU, barcode, price and active flag, and you can pick one on deal, quote, order, invoice and purchase-order lines. **A product with no variations behaves exactly as before**, and no line changes unless someone picks a variation. See [Product Variations](/product-variations) for the details: pricing, conversions, how lines print, and the [Xero](/xero#line-items) behaviour.
+
+**One change can affect host code.** `$product->productPrices` now returns product-level prices only. Variation prices share the `crm_product_prices` table and are reached through `$variation->productPrices`. The `ProductPrice::default()` scope excludes them too. Before this release, `getDefaultPrice()`, the API product payload and the Xero product sync read the first matching row, which could be a variation's price. If you query `crm_product_prices` directly, add `whereNull('product_variation_id')` to get the same result.
+
+The REST API is a widening: product responses gain a `variations` array, quote, order and invoice `line_items` accept an optional `product_variation_id`, and line responses gain `product_variation_id` and `variation`. A variation that belongs to another product or team is a `422`. See [API · Products → Variations](/api-products#variations).
+
+### Purchase-order lines now save
+
+- **Saving a purchase order with lines failed on a real database.** `PurchaseOrderService::create()` wrote `comments` and `order_product_id` to `crm_purchase_order_lines`, but no migration had added either column. The test schema had `comments` but no test saved a purchase order with lines, so the suite passed. The migration above adds both.
+- **Edits to purchase-order lines were silently lost.** `PurchaseOrderService::update()` read `$request->purchaseOrderLines`, which the form never sends. It now reads `products`, with the same row keys as `create()`: it updates matched lines, adds new ones and removes lines that are no longer submitted. It only matches lines that belong to the purchase order being edited.
+- A dynamic product typed into the purchase-order form is named after the typed text again.
+
+Line edits made to a purchase order before this release were not saved. Check any purchase order whose lines your users believe they changed after creating it.
+
+### Contact person and organization are now linked on save
+
+Saving a lead, deal, quote, order, invoice or purchase order with both a contact person and an organization now links the two as related contacts, so each lists the other on its show page ([#94](https://github.com/venturedrake/laravel-crm/issues/94)). An existing link is not duplicated, and changing the person or organization keeps the old link. The fix is PHP-only, so it applies even if you keep published views. **It does not backfill:** records saved before this release stay unlinked until they are saved again. See [People → Related contacts](/people#related-contacts).
+
+### Smaller fixes
+
+- **Creating a quote from a deal now keeps the deal's products.** The quote form starts with the deal's lines (product, variation, quantity and price), and they stay editable. See [Quotes](/quotes#creating-a-quote-from-a-deal).
+- **A restored product, lunch or file no longer shows who deleted it.** `ProductObserver::restored()`, `LunchObserver::restored()` and `FileObserver::restored()` wrote the restoring user into `user_deleted_id`. They now clear `user_deleted_id` and set `user_restored_id`, as the other observers do. Rows restored on an earlier version keep the wrong value.
+- **The currency select on the quote, order, invoice and purchase-order forms now updates live.** A product or variation picked after you change the currency is priced in the new currency. Lines already on the form keep the price they have.
+
+### Views to re-publish
+
+If you have published views into `resources/views/vendor/laravel-crm`, the view finder prefers your frozen copy, and this release changes:
+
+| View | What you miss if you keep the old copy |
+|---|---|
+| `livewire/products/product-form.blade.php`, `livewire/products/product-show.blade.php` | The **Variations** card on the form and the variations table on the show page. With a frozen form you cannot manage variations in the UI at all |
+| `livewire/model-products.blade.php`, `livewire/deals/deal-form.blade.php` | The variation select on line items. A frozen copy never shows it, so no line can be put on a variation from the UI |
+| `livewire/quotes/quote-form.blade.php`, and the same file under `.../orders`, `.../invoices`, `.../purchase-orders` (`order-form`, `invoice-form`, `purchase-order-form`) | They now pass the document currency to `crm-model-products`. **A frozen copy prices variations in the install currency, not the document's.** The quote form also starts a quote created from a deal with the deal's lines; a frozen copy starts it empty |
+| `livewire/deals/deal-show.blade.php`, `livewire/quotes/quote-show.blade.php`, and the same file under `.../orders`, `.../invoices`, `.../purchase-orders`, `.../deliveries` | The variation name (`displayName()`) and SKU (`displayCode()`) on each line. A frozen copy prints the product name and code without the variation |
+| Every PDF view: `quotes/pdf.blade.php`, `orders/pdf.blade.php`, `invoices/pdf.blade.php`, `purchase-orders/pdf.blade.php`, `deliveries/pdf.blade.php`, and all 20 under `pdfs/{modern,bold,compact,professional}/` | The variation name on each line, in downloads, emailed attachments and portal pages alike. A frozen copy prints the product name without the variation. See [PDF Templates → Line item names](/pdf-templates#line-item-names) |
+
+`customers/index.blade.php` and `settings/product-attributes/product-attribute-index.blade.php` were deleted. A published copy of either is now unused and can be removed.
+
+The contact linking, purchase-order and observer fixes are PHP-only. They apply even if you keep frozen views.
+
+`php artisan laravelcrm:upgrade` names your drifted published views on every deploy (added in 2.4.1), so this table is a cross-check rather than the only signal you will get.
+
 ## Upgrading to 2.4.7
 
 A one-fix patch release. If you picked a person or organization from an autocomplete and then edited the name, the form stayed linked to the record you picked. Picking "Paul Clark" and changing the name to "Paul" kept the link to Paul Clark: the **New** badge stayed hidden, and saving attached the existing Paul Clark instead of creating "Paul". The link is now cleared as soon as the trimmed name stops matching the linked record. The check compares against the decrypted name, so it also works with `encrypt_db_fields` on.
@@ -248,7 +335,7 @@ Boards stay reachable per team at `/p/features/team/{id}`, and bare `/p/features
 
 ### Views to re-publish: none
 
-**None.** Neither change in this release touches `resources/views`, so a published view cannot hide either fix. If you are coming from 2.4.0, the 2.4.1 table below still applies to you. Upgrading past 2.4.2, check the 2.4.3 – 2.4.6 tables above as well.
+**None.** Neither change in this release touches `resources/views`, so a published view cannot hide either fix. If you are coming from 2.4.0, the 2.4.1 table below still applies to you. Upgrading past 2.4.2, check the 2.4.3 – 2.4.6 and 2.5.0 tables above as well.
 
 ## Upgrading to 2.4.1
 

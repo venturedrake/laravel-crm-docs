@@ -115,6 +115,12 @@ Where the block renders is not uniform, and the gaps are deliberate:
 
 That is the answer to *"why is my quote's From block empty on Classic?"* — the setting is resolving fine; that template does not render it.
 
+## Line item names
+
+Since 2.5.0, every template prints each line with `$line->displayName()`: the product name, plus the [variation](/product-variations) name when the line has one (`Widget — Large`). That covers all five styles, the legacy `quotes/pdf.blade.php`-style views behind `classic`, the emailed attachments and the portal pages, which all render these views.
+
+A published copy of a PDF view that still prints `$line->product->name` shows the product name without the variation. Re-publish it, or switch the call to `displayName()` in your copy. Delivery lines read the name from the order line they deliver, through `DeliveryProduct::displayName()`.
+
 ## Thumbnails
 
 The picker's artwork is served through `laravel-crm.settings.templates.thumbnail`, which prefers the host's published copy in `public/vendor/laravel-crm/img/pdf-templates` and falls back to the copy inside the package. A host whose published assets predate the artwork still sees the thumbnails without re-publishing.
