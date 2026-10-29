@@ -121,6 +121,17 @@ Route::middleware(['auth'])->get('/dashboard', function () {
 })->name('dashboard');
 ```
 
+## Subdomain Installs
+
+To serve the CRM from its own host, such as `crm.yourdomain.com`, set the full host and an empty prefix:
+
+```dotenv
+LARAVEL_CRM_ROUTE_DOMAIN=crm.yourdomain.com
+LARAVEL_CRM_ROUTE_PREFIX=
+```
+
+`route_domain` was added in 2.6.0 and is preferred over `LARAVEL_CRM_ROUTE_SUBDOMAIN`: the routes no longer depend on the host of the booting request, so `route:cache` and queue workers generate the right URLs, and requests for the bare domain or `www.` are redirected to the CRM host. See [Configuration → Route Domain](/configuration#route-domain).
+
 ## Field Encryption
 
 To encrypt sensitive database fields (names, emails, phones) after installation:

@@ -102,3 +102,5 @@ Inside the CRM, agents work conversations from **Chat** in the sidebar:
 - **Conversations list** (`crm-chat-index`) — paginated list of open/pending/closed conversations.
 - **Conversation view** (`crm-chat-show`) — agent reply view with realtime/polled message updates and conversation actions (assign, close, convert to lead, promote visitor to person).
 
+> **Note:** Both views check the converted lead itself rather than `lead_id`. If that lead has since been deleted, the conversation renders without the lead link and can be converted again. Before 2.6.0 the conversation view crashed instead.
+

@@ -48,7 +48,7 @@ A portal document page renders **the record's own PDF template** — the custome
 
 One correction is applied on the way out, because DomPDF and a browser genuinely disagree: DomPDF multiplies the font's own height by a unitless `line-height` rather than treating it as the line box height, so a template declaring `1.2` renders at roughly `1.79em` there and `1.2em` in a browser. `PortalDocument` rewrites the declared line heights for `modern`, `bold`, `compact` and `professional` so the page's line pitch matches the PDF's. `classic` declares no unitless line-height and is excluded. The correction lives in `PortalDocument` rather than in the shared templates, so the generated PDFs are byte-for-byte unaffected.
 
-> **Note:** The three `crm-portal-quote-line-items`, `crm-portal-invoice-line-items` and `crm-portal-purchase-order-line-items` Livewire components were removed in 2.4.1, dead once the pages render the template itself. A published portal view still referencing one will throw — see the [Upgrade Guide](/upgrading#views-to-re-publish).
+> **Note:** The three `crm-portal-quote-line-items`, `crm-portal-invoice-line-items` and `crm-portal-purchase-order-line-items` Livewire components were removed in 2.4.1, dead once the pages render the template itself. A published portal view still referencing one will throw — see the [Upgrade Guide](/upgrading#upgrading-to-241).
 
 ## Portal Authentication
 

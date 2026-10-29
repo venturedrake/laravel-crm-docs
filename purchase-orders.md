@@ -62,9 +62,9 @@ Reached from the purchase order via `purchaseOrderLines()`.
 | `tax_amount` | `integer` | Tax on the line (stored in cents) |
 | `amount` | `integer` | Line total (stored in cents) |
 | `currency` | `string(3)` | Currency code |
-| `comments` | `string` | Optional per-line note (column added in 2.5.0) |
+| `comments` | `string` | Optional per-line note, printed inside the product's cell on the show page and PDF (column added in 2.5.0) |
 | `order_product_id` | `integer` | The order line this was drawn from, if any (column added in 2.5.0) |
-| `order` | `integer` | Position of the line on the document |
+| `order` | `integer` | Position of the line on the document, set by dragging lines on the form |
 
 > **Note:** `quantity` is `decimal(15,3)`, so a purchase order line can carry `3.5` Kg or `0.25` L. The `HasDecimalQuantity` trait casts it, which means `$line->quantity` reads back as a PHP `float`.
 
@@ -80,6 +80,8 @@ Two bugs made purchase-order lines unreliable before 2.5.0:
 - **Edits to lines were silently lost.** `PurchaseOrderService::update()` read a `purchaseOrderLines` key that the form never sends. It now reads `products`, using the same row keys as `create()`: matched lines are updated, new ones added, and lines no longer submitted removed. It only matches lines that belong to the purchase order being edited.
 
 A dynamic product typed into the purchase-order form is also named after the typed text again.
+
+Since 2.6.0 the purchase-order PDFs, in every template, print lines in their saved `order`, so dragging lines on the form changes the order on the PDF too.
 
 ## PDF Generation
 

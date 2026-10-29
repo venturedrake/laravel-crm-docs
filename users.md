@@ -141,3 +141,14 @@ The users index filters on **role** and **CRM access**, backed by the `role_id` 
 
 The listing itself is scoped to the current team, so the visible set matches the actionable set — deleting a user outside your current team is refused.
 
+## Deleting a user
+
+The CRM tables reference users with foreign keys that have no `ON DELETE` action. Before 2.6.0, deleting a user who had a personal setting, had created a CRM record or had a team seat failed with an integrity violation. Since 2.6.0, `UserObserver::deleting()` calls `Support\UserReferences::release()` first:
+
+- The user's personal `crm_settings` rows and their `crm_team_user` rows are deleted.
+- Every nullable CRM column with a foreign key to the user is set to `NULL`. That includes `user_owner_id`, so records the user owned become **unallocated**, `user_assigned_id`, and the `user_created_id`, `user_updated_id`, `user_deleted_id` and `user_restored_id` [tracking columns](#user-tracking-relations). Reassign the user's records first if you want to keep an owner on them.
+- A required reference still blocks the delete. The usual one is a team owner (`crm_teams.user_id`). In that case nothing is released, and the delete fails with the integrity violation as before.
+- A soft delete of the user leaves every reference in place.
+
+The foreign keys are read from the live schema, so a column your published migrations never constrained is left as it is. Because it runs from the observer, it also applies to users deleted by your own code, for example a Filament `DeleteAction`.
+

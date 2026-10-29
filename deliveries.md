@@ -23,6 +23,8 @@ Deliveries track the physical shipment of goods from an [Order](/orders). Each d
 | `user_owner_id` | `integer` | Owner user |
 | `user_assigned_id` | `integer` | Assigned user |
 
+Both dates can be adjusted in the UI with the [delivery options](#delivery-options): `delivered_on` can be hidden, and `delivery_expected` relabelled.
+
 ## Relationships
 
 | Method | Type | Related Model | Description |
@@ -76,6 +78,33 @@ Since 2.5.0 a delivery line prints the [product variation](/product-variations) 
 > **Note:** A **soft-deleted product stays readable** on the deliveries that already reference it. `DeliveryProduct::orderProduct()` resolves `withTrashed()`, and the order line's own product relation does too, so the line keeps its description on the show view and in all 14 PDF templates. See [Products](/products).
 
 The quantity control on the Order → Delivery form is a bounded number input, and the cap is enforced **server-side**: on submit the remainder is recomputed from the order line and the deliveries already raised against it. The delivery form previously ran no quantity validation at all.
+
+## Delivery Options
+
+Since 2.6.0 the `deliveries` keys in `config/laravel-crm.php` adjust how the two delivery dates appear. The defaults keep the current behaviour.
+
+```php
+'deliveries' => [
+    'delivered_on' => true,                           // false hides "Delivered on" everywhere
+    'delivery_expected_label' => 'delivery_expected', // lang key used to label delivery_expected
+],
+```
+
+- **`delivered_on`** set to `false` removes "Delivered on" from the delivery form, show page, index and related index, and a save no longer writes the column, so a stored date survives an edit. The column and the REST API are left alone. No PDF template prints this date.
+- **`delivery_expected_label`** names the `laravel-crm::lang` key that labels `delivery_expected` on the form, show page, both index headers and the delivery PDFs. `delivery_expected` ("Delivery expected") and `delivery_date` ("Delivery date") exist in `en`, `en_au`, `en_gb` and `fa`, and you can add your own key to a published lang file. An unknown key falls back to `delivery_expected`.
+
+The delivery PDFs have always headed this date "Delivery date", and at the default they still do. Any other key relabels the PDFs too.
+
+The keys are install-wide, including on teams installs, and are not in the Settings UI. The index and related index columns are built in PHP, so they follow the options even if you keep published views; the form, show page and PDFs need re-publishing. See the [Upgrade Guide](/upgrading#upgrading-to-260).
+
+For a host that only tracks when a delivery is due:
+
+```php
+'deliveries' => [
+    'delivered_on' => false,
+    'delivery_expected_label' => 'delivery_date',
+],
+```
 
 ## PDF Generation
 

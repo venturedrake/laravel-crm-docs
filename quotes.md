@@ -96,8 +96,8 @@ Reached from the quote via `quoteProducts()`.
 | `tax_amount` | `integer` | Tax on the line (stored in cents) |
 | `amount` | `integer` | Line total (stored in cents) |
 | `currency` | `string(3)` | Currency code |
-| `comments` | `string` | Optional per-line note |
-| `order` | `integer` | Position of the line on the document |
+| `comments` | `string` | Optional per-line note, printed inside the product's cell on the show page and PDF |
+| `order` | `integer` | Position of the line on the document, set by dragging lines on the form |
 
 > **Note:** `quantity` is `decimal(15,3)`, so a product sold by weight or volume can be quoted at `3.5` Kg or `0.25` L. The `HasDecimalQuantity` trait casts it, which means `$line->quantity` reads back as a PHP `float` — a whole quantity of 2 compares as `2.0`. Values are rounded to 3 decimal places on write, and a whole quantity still renders as `2` rather than `2.000`.
 

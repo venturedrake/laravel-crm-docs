@@ -112,8 +112,8 @@ Reached from the order via `orderProducts()`.
 | `tax_amount` | `integer` | Tax on the line (stored in cents) |
 | `amount` | `integer` | Line total (stored in cents) |
 | `currency` | `string(3)` | Currency code |
-| `comments` | `string` | Optional per-line note |
-| `order` | `integer` | Position of the line on the document |
+| `comments` | `string` | Optional per-line note, printed inside the product's cell on the show page and PDF |
+| `order` | `integer` | Position of the line on the document, set by dragging lines on the form |
 
 > **Note:** `quantity` is `decimal(15,3)`, so an order line can carry `3.5` Kg or `0.25` L. The `HasDecimalQuantity` trait casts it, which means `$line->quantity` reads back as a PHP `float`.
 
@@ -128,6 +128,45 @@ The Order → Invoice and Order → Delivery forms let you invoice or deliver pa
 The cap is enforced **server-side**. On submit the remainder is recomputed from the order line and the invoices or deliveries already raised against it, and the submitted quantity is checked against that — not against the row's own `quantity_max`, which is a public Livewire property and therefore whatever the caller sends back. Previously the cap existed only in the browser, so an over-invoice was reachable by posting the form directly. The delivery form, which ran no validation at all, now validates its quantities too.
 
 `invoiceComplete()` and `deliveryComplete()` compare the drawn-down totals within half the smallest storable unit rather than with `> 0`, so floating-point residue from a split fulfilment cannot leave a document reading as "not fully invoiced" forever.
+
+## Form Options
+
+Since 2.6.0 you can trim the order create and edit form with the `orders.form` keys in `config/laravel-crm.php`. Every key defaults to the full form, so an install that sets nothing sees no change.
+
+```php
+'orders' => [
+    'form' => [
+        'description' => true,        // false hides the description textarea
+        'labels' => true,             // false hides the labels picker
+        'custom_fields' => true,      // false hides both custom field blocks
+        'unallocated_owner' => true,  // false removes "Unallocated" from the owner select
+        'addresses' => ['billing', 'shipping'], // which address tabs to show and save
+    ],
+],
+```
+
+- **`unallocated_owner`** set to `false` removes "Unallocated" from the owner select, presets an order with no owner to the signed-in user, and makes the owner required.
+- **`addresses`** lists the address tabs to show and save, by address type name (`billing`, `shipping`), not id. With one listed it is shown without the tab switcher. An empty array hides the addresses card.
+
+**Hiding a field never changes stored data.** Validation and save skip a hidden field rather than clearing it, so an existing description, labels, custom field values and an address of an unlisted type survive an edit. An order created from a [quote](/quotes) still copies the quote's description when the field is hidden.
+
+The keys are install-wide, including on teams installs, and are not in the Settings UI. The REST API and the legacy controller are not affected: `OrderService::create()` and `update()` take the options as an optional `FormOptions` argument and save every field when it is not passed. The quote, invoice and purchase-order forms are not covered yet; they will take the same `form` shape under their own key.
+
+For a host that only ships to customers and does not use descriptions, labels or custom fields on orders:
+
+```php
+'orders' => [
+    'form' => [
+        'description' => false,
+        'labels' => false,
+        'custom_fields' => false,
+        'unallocated_owner' => false,
+        'addresses' => ['shipping'],
+    ],
+],
+```
+
+> **Note:** If you have published `livewire/orders/order-form.blade.php`, re-publish it along with the new `livewire/orders/partials/order-address-fields.blade.php`. A frozen copy still shows every field, but a save skips the hidden ones, so an edit to a field that is still on screen is silently not saved. See the [Upgrade Guide](/upgrading#upgrading-to-260).
 
 ## PDF Generation
 

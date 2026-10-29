@@ -72,9 +72,36 @@ These defaults are also used each time a user creates a new team when team suppo
 | `LARAVEL_CRM_TAX_NAME` | `Tax` | Label for tax on quotes/invoices |
 | `LARAVEL_CRM_TAX_RATE` | `null` | Default tax rate percentage |
 
+## Route Domain
+
+The full host the CRM is served from, e.g. `crm.yourdomain.com.au`. New in 2.6.0, and the recommended setting for a subdomain install.
+
+```php
+'route_domain' => env('LARAVEL_CRM_ROUTE_DOMAIN'),
+```
+
+| Environment Variable | Default | Description |
+|---|---|---|
+| `LARAVEL_CRM_ROUTE_DOMAIN` | `null` | Fixed host for the CRM, login and API routes |
+
+When set, it wins over `route_subdomain`:
+
+- The CRM, login and API route groups are bound to exactly this host. Route registration no longer reads the request, so `php artisan route:cache`, queue workers and generated URLs no longer depend on the host of whatever request booted the app.
+- With `route_prefix` empty, `GET` and `HEAD` requests for the bare domain or `www.` (e.g. `yourdomain.com.au/leads`) redirect to the same path and query on this host, including URLs that match no CRM route. The redirect is global HTTP middleware (`RedirectToRouteDomain`). Other methods, `/api/*` and the public `/p` routes (portal, chat widget embed, email and SMS tracking) are never redirected, because their signed URLs would stop validating.
+- Any other host gets a 404 on the CRM routes.
+
+A typical subdomain install:
+
+```dotenv
+LARAVEL_CRM_ROUTE_DOMAIN=crm.yourdomain.com.au
+LARAVEL_CRM_ROUTE_PREFIX=
+```
+
+Leave it empty to keep working the host out from `route_subdomain`.
+
 ## Route Subdomain
 
-Serve the CRM on a subdomain, e.g. `https://crm.yourdomain.com`.
+Serve the CRM on a subdomain, e.g. `https://crm.yourdomain.com`. Prefer [`route_domain`](#route-domain) above, which wins over this key when both are set.
 
 ```php
 'route_subdomain' => env('LARAVEL_CRM_ROUTE_SUBDOMAIN', null),
@@ -83,6 +110,8 @@ Serve the CRM on a subdomain, e.g. `https://crm.yourdomain.com`.
 | Environment Variable | Default | Description |
 |---|---|---|
 | `LARAVEL_CRM_ROUTE_SUBDOMAIN` | `null` | Subdomain for CRM routes |
+
+The domain is worked out from the host of each request, which only works for hosts of three or four labels. Since 2.6.0, a `GET` or `HEAD` request for a two-label host such as `yourdomain.com` is redirected to `{route_subdomain}.yourdomain.com`, keeping the path and query; other methods get a 404. The check also runs on the login routes, before authentication, so a guest is sent to the subdomain before the login page. Before 2.6.0 the login page rendered on the bare domain and every CRM page behind it returned a 404.
 
 ## Route Prefix
 
@@ -189,6 +218,52 @@ Enable or disable CRM modules based on your business needs. Remove a module from
 > **Tip:** If you sell digital products or services, you can remove `deliveries` since it won't be relevant.
 
 The rule is read in two places, and both give the same answer: the `@hasleadsenabled` / `@hasquotesenabled` / … Blade directives, and `VentureDrake\LaravelCrm\Support\Modules` for PHP callers such as the [Settings](/settings) component deciding which tabs to render. Note that an **empty** `modules` array means every module is enabled, not none — "unconfigured" is treated as "everything on", and `[]` is unconfigured.
+
+## Order Form
+
+Trim the order create and edit form. New in 2.6.0. Every key defaults to the full form, so an install that sets nothing sees no change.
+
+```php
+'orders' => [
+    'form' => [
+        'description' => true,
+        'labels' => true,
+        'custom_fields' => true,
+        'unallocated_owner' => true,
+        'addresses' => ['billing', 'shipping'],
+    ],
+],
+```
+
+| Key | Default | Description |
+|---|---|---|
+| `orders.form.description` | `true` | `false` hides the description textarea |
+| `orders.form.labels` | `true` | `false` hides the labels picker |
+| `orders.form.custom_fields` | `true` | `false` hides both custom field blocks |
+| `orders.form.unallocated_owner` | `true` | `false` removes "Unallocated" from the owner select, presets an order with no owner to the signed-in user, and makes the owner required |
+| `orders.form.addresses` | `['billing', 'shipping']` | Address tabs to show and save, by address type name. With one listed it is shown without tabs; an empty array hides the addresses card |
+
+These keys are install-wide, including on teams installs, and have no environment variables. Hiding a field never changes stored data. See [Orders → Form options](/orders#form-options).
+
+> **Note:** An existing install picks these keys up without re-publishing the config. If you add an `orders` block to a published config, any `form` key you leave out keeps its default.
+
+## Deliveries
+
+Options for the [Deliveries](/deliveries) module. New in 2.6.0.
+
+```php
+'deliveries' => [
+    'delivered_on' => true,
+    'delivery_expected_label' => 'delivery_expected',
+],
+```
+
+| Key | Default | Description |
+|---|---|---|
+| `deliveries.delivered_on` | `true` | `false` hides the "Delivered on" date from the delivery form, show page, index and related index. The column, the API and any stored value are left alone |
+| `deliveries.delivery_expected_label` | `delivery_expected` | A key in the `laravel-crm::lang` file used to label the expected delivery date on the form, show page, indexes and PDFs. An unknown key falls back to `delivery_expected` |
+
+These keys are install-wide, including on teams installs, and have no environment variables. See [Deliveries → Delivery options](/deliveries#delivery-options).
 
 ## Monitoring
 
@@ -315,7 +390,7 @@ The package ships four locale directories under `resources/lang`:
 | Locale | Contents |
 |---|---|
 | `en` | The complete key set — every other locale falls back to this one |
-| `en_au` | A small regional override file (≈30 keys): Australian spellings and terms such as *ABN Number* and *postcode* |
+| `en_au` | A small regional override file (≈30 keys): Australian spellings and terms such as *ABN Number* and *postcode*. Since 2.6.0 it also carries `delivery_expected` and `delivery_date` for [`delivery_expected_label`](#deliveries) |
 | `en_gb` | The same, for British spellings |
 | `fa` | Persian — a full translation, new in 2.4.0 |
 

@@ -88,7 +88,7 @@ Reached from the invoice via `invoiceLines()`.
 | `tax_amount` | `integer` | Tax on the line (stored in cents) |
 | `amount` | `integer` | Line total (stored in cents) |
 | `currency` | `string(3)` | Currency code |
-| `comments` | `string` | Optional per-line note |
+| `comments` | `string` | Optional per-line note, printed inside the product's cell on the show page and PDF |
 
 > **Note:** `quantity` is `decimal(15,3)`, so an invoice line can carry `3.5` Kg or `0.25` L. The `HasDecimalQuantity` trait casts it, which means `$line->quantity` reads back as a PHP `float`.
 
@@ -97,6 +97,8 @@ Reached from the invoice via `invoiceLines()`.
 > **Note:** A line can carry a [product variation](/product-variations). The variation select appears once a product with active variations is chosen, and picking one prices the line in the invoice's currency. The show page, PDF, emailed invoice and portal print `Product — Variation`, and an invoice raised from an order keeps the order line's variation. The [Xero](/xero#line-items) sync sends the variation name in the line description.
 
 When an invoice is raised from an [Order](/orders#drawing-down-an-order-line), the quantity is capped at the order line's outstanding remainder, recomputed server-side from the invoices already raised against it.
+
+> **Note:** Before 2.6.0, updating an invoice changed the tax on its existing lines. `InvoiceService::update()` looked up the tax rate with the invoice line's own id instead of the product id, so an existing line took its tax from whichever product had that id, or got no tax when there was none. New lines were not affected. An invoice edited on an earlier version keeps the wrong tax until its lines are saved again.
 
 ## PDF Generation
 
