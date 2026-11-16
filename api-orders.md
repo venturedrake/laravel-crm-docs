@@ -55,7 +55,9 @@ Accepted on `POST` only — the source links are set at creation and cannot be r
 
 `lead_id` (UUID), `deal_id` (UUID), `quote_id` (UUID).
 
-> **Important:** `subtotal` and `total` are **not** writable. Both are computed from `line_items`, `discount`, `tax` and `adjustments`, and sending either is a `422`. They are still returned in the response shape above. `discount` and `tax` reject negative values — see [API → Conventions](/api#conventions).
+> **Important:** `subtotal` and `total` are **not** writable. Both are computed from the saved `line_items` (and their tax), `discount` and `adjustments`, and sending either is a `422`. They are still returned in the response shape above. Since 2.7.0 the header `tax` is the sum of the lines' tax: it is still accepted, and rejects negatives, but is ignored. See [API → Conventions](/api#conventions).
+
+> **Important:** Since 2.7.0 a `DELETE` on an order with invoices, purchase orders or deliveries is a `403` naming the first match, e.g. `"This order has invoices and can't be deleted"`, and the order is kept. See [API → Conventions](/api#conventions) and [Orders → Deleting an Order](/orders#deleting-an-order).
 
 ## Nested line items
 

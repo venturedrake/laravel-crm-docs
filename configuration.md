@@ -352,6 +352,22 @@ Settings for the [Features](/features) module.
 |---|---|---|
 | `LARAVEL_CRM_FEATURES_VIEW_DEDUP_MINUTES` | `60` | View de-duplication window in minutes. Set to `0` to record every page view. |
 
+## Kanban Boards
+
+Since 2.7.0 the [leads](/leads), [deals](/deals) and [quotes](/quotes) boards render a fixed number of cards per column and load the rest on demand with a **Load more** button.
+
+```php
+'board' => [
+    'per_column' => env('LARAVEL_CRM_BOARD_PER_COLUMN', 20),
+],
+```
+
+| Environment Variable | Default | Description |
+|---|---|---|
+| `LARAVEL_CRM_BOARD_PER_COLUMN` | `20` | Cards rendered per board column before **Load more** |
+
+The key reaches an existing install through `mergeConfigFrom`, so you do not need to re-publish `config/laravel-crm.php`. See [Pipelines → Board View](/pipelines#board-view).
+
 ## Update Notifications
 
 Show or hide package update notifications for CRM users.

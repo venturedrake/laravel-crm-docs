@@ -48,3 +48,5 @@ Accepted on `POST` / `PUT` (`*` = required on `POST`):
 
 `title*`, `description`, `amount`, `currency`, `expected_close`, `lead_id` (UUID), `person_id` (UUID), `organization_id` (UUID), `pipeline_stage_id` (UUID), `user_owner_id` (int), `labels[]` (UUIDs).
 
+> **Important:** Since 2.7.0 a `POST` whose `lead_id` is a lead that has already been converted is a `422` on `lead_id` ("This lead has already been converted to a deal"). Email and phone values on the request are format-checked. See [API → Conventions](/api#conventions).
+

@@ -15,7 +15,7 @@ Tasks are assignable to-do items that can be attached to any CRM entity (leads, 
 |---|---|---|
 | `external_id` | `string` | UUID used in URLs (auto-generated) |
 | `name` | `string` | Task title |
-| `description` | `text` | Optional detailed description |
+| `description` | `text` | Optional detailed description, shown escaped with its line breaks kept |
 | `start_at` | `datetime` | Optional start date and time, so a task can describe a window rather than only a deadline |
 | `due_at` | `datetime` | When the task is due |
 | `completed_at` | `datetime` | When the task was marked complete |
@@ -25,6 +25,8 @@ Tasks are assignable to-do items that can be attached to any CRM entity (leads, 
 | `taskable_id` | `integer` | Polymorphic parent ID |
 | `user_owner_id` | `integer` | User responsible for the task |
 | `user_assigned_id` | `integer` | User the task is assigned to |
+
+> **Note:** Before 2.7.0 task descriptions were echoed unescaped, so a description containing markup ran script for every user who opened the record. They are now escaped with line breaks kept. A published `livewire/tasks/task-item.blade.php` keeps the old behaviour until you re-publish it. See [Security → Stored Markup Escaping](/security#stored-markup-escaping).
 
 ## Relationships
 

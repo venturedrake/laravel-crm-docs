@@ -56,7 +56,9 @@ Accepted on `POST` / `PUT` (`*` = required on `POST`):
 
 `title*`, `description`, `reference`, `currency`, `issue_at`, `expire_at`, `terms`, `discount`, `tax`, `adjustments`, `person_id` (UUID), `organization_id` (UUID), `lead_id` (UUID, `POST` only), `pipeline_stage_id` (UUID), `user_owner_id` (int), `labels[]` (UUIDs), `line_items[]`.
 
-> **Important:** `subtotal` and `total` are **not** writable. Both are computed from `line_items`, `discount`, `tax` and `adjustments`, and sending either is a `422`. They are still returned in the response shape above. `discount` and `tax` reject negative values — see [API → Conventions](/api#conventions).
+> **Important:** `subtotal` and `total` are **not** writable. Both are computed from the saved `line_items` (and their tax), `discount` and `adjustments`, and sending either is a `422`. They are still returned in the response shape above. Since 2.7.0 the header `tax` is the sum of the lines' tax: it is still accepted, and rejects negatives, but is ignored. See [API → Conventions](/api#conventions).
+
+> **Important:** Since 2.7.0 an accepted quote, or one with an order, is read-only: a `PUT` is a `422` on `quote` and nothing is saved. A `DELETE` on a quote with an order is a `403` (`"This quote has an order and can't be deleted"`). An `expire_at` on an earlier day than `issue_at` is a `422`; `expire_at` is converted to the app's timezone before the days are compared. See [API → Conventions](/api#conventions) and [Quotes → Locked Quotes](/quotes#locked-quotes).
 
 ## Nested line items
 

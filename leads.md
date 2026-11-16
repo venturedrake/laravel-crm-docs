@@ -52,6 +52,7 @@ Leads represent potential business opportunities that have not yet been qualifie
 | `assignedToUser()` | `belongsTo` | `User` | Assigned user |
 | `createdByUser()` | `belongsTo` | `User` | Creator |
 | `updatedByUser()` | `belongsTo` | `User` | Last updater |
+| `deal()` | `hasOne` | `Deal` | The deal the lead was converted to (the latest, if there are several) |
 
 ## Helper Methods
 
@@ -96,13 +97,26 @@ $lead = Lead::create([
 ]);
 ```
 
+## Converting a Lead
+
+A lead is converted to a [Deal](/deals) from its show page. Since 2.7.0:
+
+- **The lead moves to a converted stage.** `LeadService::markConverted()` sets `converted_at` and moves the lead to a **Converted**, **Closed Won** or **Won** stage when its pipeline has one.
+- **The show page shows a dated Converted badge** with a link to the deal, through `Lead::deal()`.
+- **A lead can only be converted once.** The show page, a deal form left open on a lead that has since been converted, `DealService::create()` and the [API](/api-deals) (`422` on `lead_id`) all refuse a second deal. Before, a converted lead could be converted again into a second deal.
+- **Deleting the lead's last deal reopens it.** `converted_at` is cleared, so the lead returns to the list and board and can be converted again. The 2.7.0 upgrade reopens leads whose deals were deleted earlier, see the [Upgrade Guide](/upgrading#leads-whose-deal-was-deleted-are-reopened).
+
+A person created from the lead form saves their email with the **work** type ([#144](https://github.com/venturedrake/laravel-crm/issues/144)).
+
 ## Searching & Filtering
 
 Leads are searchable by `lead_id`, `title`, and associated person/organisation names. They can be filtered by `user_owner_id` and `labels.id`.
 
+Since 2.7.0 the list and board find a lead by its number with or without the prefix, in any case. `%` and `_` in a search term are matched literally.
+
 ## Views
 
-Leads support both **list view** (paginated table) and **board view** (Kanban-style pipeline stages). Toggle between views using the view switcher.
+Leads support both **list view** (paginated table) and **board view** (Kanban-style pipeline stages). Toggle between views using the view switcher. The board renders a page of cards per column with **Load more**, see [Pipelines → Board View](/pipelines#board-view).
 
 ## Traits
 

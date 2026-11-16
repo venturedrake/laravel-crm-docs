@@ -68,6 +68,12 @@ $org = Organization::create([
 ]);
 ```
 
+## Validation and Deleting
+
+Since 2.7.0 the organization form, and the lead, deal, quote and order forms that can create one, check the format of email addresses and phone numbers. See [People → Email and Phone Validation](/people#email-and-phone-validation).
+
+Deleting an organization warns which records still link to it. Those records stay, and show the organization as "Name (deleted)".
+
 ## Searching & Filtering
 
 Searchable by `name`. Filterable by `user_owner_id` and `labels.id`. Sortable by `id`, `name`, `created_at`, and `updated_at`.

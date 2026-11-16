@@ -60,9 +60,15 @@ Pipelines define the workflow that [Leads](/leads), [Deals](/deals), and [Quotes
 
 ## Managing Pipelines
 
-Pipelines and stages are managed through **Settings → Pipelines** and **Settings → Pipeline Stages** in the CRM UI.
+Pipelines and stages are managed through **Settings → Pipelines** and **Settings → Pipeline Stages** in the CRM UI. Stages are assigned colours that show on the Kanban board.
+
+- **Creating a stage.** The stages index has a **Create pipeline stage** button, which opens `/crm/pipeline-stages/create` ([#114](https://github.com/venturedrake/laravel-crm/issues/114)). The form defaults to the first pipeline, and a new stage goes after the pipeline's last one ([#138](https://github.com/venturedrake/laravel-crm/issues/138)).
+
+> **Removed in 2.7.0:** the v1 pipeline and pipeline stage create/store routes ([#107](https://github.com/venturedrake/laravel-crm/issues/107)), which rendered views v2 never shipped and returned a 500. `/crm/pipelines/create` is a 404, and the `StorePipelineRequest` and `StorePipelineStageRequest` classes are gone.
 
 ### Reorder stages
+
+Since 2.7.0 stages can be reordered, saving through `PipelineStageService` ([#123](https://github.com/venturedrake/laravel-crm/issues/123)).
 
 Open **Settings → Pipelines → [pipeline]**. In the **Stages** list, drag a stage by its handle or use its **Move up** and **Move down** buttons (also available with Tab and Enter/Space). You can also open a stage under **Settings → Pipeline Stages** and choose **Reorder stages** in its pipeline card.
 
@@ -76,7 +82,11 @@ A pipeline supports up to 127 consecutive stage positions. If older positions ha
 
 ## Board View
 
-[Leads](/leads), [Deals](/deals), and [Quotes](/quotes) all support a Kanban-style board view that groups records by `pipeline_stage_id`. Cards are dragged between columns using SortableJS, and stage transitions persist through the underlying entity's update path.
+[Leads](/leads), [Deals](/deals), and [Quotes](/quotes) all support a Kanban-style board view that groups records by `pipeline_stage_id`. Cards are dragged between columns using SortableJS, and stage transitions persist through the underlying entity's update path. A card can only be moved to a stage of the board's own pipeline.
+
+Since 2.7.0 the boards are paged. Each column renders 20 cards with a **Load more** button below them; set `LARAVEL_CRM_BOARD_PER_COLUMN` to change the page size (see [Configuration → Kanban Boards](/configuration#kanban-boards)). Each column header shows the column's full count and the total value of every record in it, one line per currency. Before, a board rendered every record, and one with a few thousand records took up to 25 seconds and 49 MB of HTML. Board search finds contacts by name with field encryption on.
+
+`LeadBoard`, `DealBoard` and `QuoteBoard` extend the `PipelineBoard` base class, which pages its own queries. A subclass narrows the cards in `boardScope()`, calling the parent first, and qualifies columns with `$this->column('title')`, because a search joins the people and organizations tables. Boards that extend `KanbanBoard` directly are not paged. On the quote board, a card's Send item opens a Send drawer shared by the whole page. See the [Upgrade Guide](/upgrading#boards-load-one-page-per-column) if you extend a board.
 
 Each card carries a `data-record-id` attribute, and the drop handler collects **only** those. Every card is followed in the DOM by its own delete-confirm `<dialog>`, so before 2.4.1 the handler posted arrays like `['3', 'modalDeleteLead3', '7']` — the server then tried to update a record with a non-numeric id and 500'd, and the interleaved dialogs inflated `pipeline_stage_order` to 1, 3, 5 rather than 1, 2, 3.
 

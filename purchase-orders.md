@@ -83,6 +83,18 @@ A dynamic product typed into the purchase-order form is also named after the typ
 
 Since 2.6.0 the purchase-order PDFs, in every template, print lines in their saved `order`, so dragging lines on the form changes the order on the PDF too.
 
+Since 2.7.0 the purchase order's `subtotal`, `tax` and `total` are summed from its saved lines, as on [quotes](/quotes#document-totals).
+
+## Delivery Address
+
+A purchase order is either collected (**Pickup**) or delivered (**Deliver**). Since 2.7.0:
+
+- **Deliver needs an address**, and it must be one of the addresses the form offers. Before, choosing Deliver with no address was a 500.
+- **The form defaults to Pickup** when the team has no delivery address ([#124](https://github.com/venturedrake/laravel-crm/issues/124)).
+- **Only team addresses with a line 1 or a city are offered** ([#115](https://github.com/venturedrake/laravel-crm/issues/115)).
+
+A delivery date on an earlier day than the issue date is rejected ([#106](https://github.com/venturedrake/laravel-crm/issues/106)).
+
 ## PDF Generation
 
 Purchase orders are exported as PDF documents through `barryvdh/laravel-dompdf`, rendered with one of the five shipped [PDF Templates](/pdf-templates).
@@ -108,6 +120,8 @@ Purchase orders have a supplier-facing portal page at `/p/purchase-orders/{exter
 ### Get link
 
 A **Get link** button beside Preview, on the purchase order show page and on index rows, hands over the same 14-day signed portal URL that gets emailed to the supplier, with an optional **mark as sent** tick. Before 2.4.1 the only way to obtain that link was to send the purchase order.
+
+Since 2.7.0 a new purchase order shows no **Sent** badge until it has been sent, and sending it sets `sent`. The Send drawer validates recipient addresses (comma or semicolon separated) before the PDF is rendered, and keeps the drawer open with an error toast if the mail transport fails.
 
 The modal is mounted once in the layout rather than once per row, and `confirm()` re-resolves the record through `Support\PortalLink`'s model whitelist and the purchase order policy rather than trusting the component's own state — a tampered payload cannot mint a link to a record the caller may not view.
 
@@ -135,7 +149,7 @@ $po = PurchaseOrder::create([
 
 ## Searching & Filtering
 
-Searchable by `reference`, `purchase_order_id`, and associated organisation names.
+Searchable by `reference`, `purchase_order_id`, and associated organisation names. Since 2.7.0 the list finds a purchase order by its number with or without the prefix, in any case. `%` and `_` in a search term are matched literally.
 
 ## Traits
 

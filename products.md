@@ -97,6 +97,10 @@ $product->productPrices()->create([
 
 The product create and edit form has a **Variations** card for adding, editing, reordering, deactivating and removing variations, and the show page lists them. Each variation has its own SKU, barcode, price and active flag. See [Product Variations](/product-variations).
 
+## Line-item product picker
+
+The product select on each line of the quote, order, invoice, purchase-order and deal forms is searched on the server. Since 2.7.0 it returns up to 20 matching products for the term you type, instead of rendering the whole catalogue into every row. A deleted product stays out of the results.
+
 ## Deleting a Product
 
 Deleting a product **soft-deletes** it. The distinction matters because a product is referenced by every quote, order, invoice, purchase order, delivery and deal line ever raised against it:
