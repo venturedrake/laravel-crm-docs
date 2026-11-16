@@ -49,6 +49,8 @@ Deals represent qualified business opportunities with an estimated value and exp
 
 ## Products
 
+Products are optional. Unselected product rows are ignored when saving a deal, including when converting a lead. Clearing a saved line's product selection removes that line. The product count on the deal page includes only lines with a selected product, so a deal without products shows **Products (0)**.
+
 A deal's products are `DealProduct` lines, reached via `dealProducts()`. Since 2.5.0 a line can carry a [product variation](/product-variations): once a product with active variations is chosen on the deal form, a variation select appears beside it, and picking one prices the line from the variation's price in the deal's currency. The deal show page prints the line as `Product — Variation`.
 
 Creating a [Quote](/quotes#creating-a-quote-from-a-deal) from the deal starts the quote with the deal's lines, variations included.

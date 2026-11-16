@@ -35,6 +35,14 @@ Invoices represent billing documents generated from [Orders](/orders). An invoic
 
 > **Note:** `due_date` is nullable, and the [API](/api-invoices) accepts a null value for it. It is guarded on the invoices index, on the show page and in all five [PDF templates](/pdf-templates), and the emailed invoice body has a **no-due-date variant** rather than interpolating a formatted null. Before 2.4.1 a single null due date took down the entire invoices index for every user of the install, not only for whoever created the record.
 
+## Recording Payments
+
+On the invoice page, use **Pay** to record all or part of the outstanding balance. After a payment, **Amount paid** and **Balance due** appear immediately below **Total**, in the invoice's currency. These rows remain hidden until a payment is recorded or the invoice is marked fully paid.
+
+A partially paid invoice shows a **Part paid** badge alongside its due or overdue badge, when it has a due date. Once settled, the header shows **Paid** and the balance is zero. The amounts and badges refresh immediately after recording a payment; reloading the page shows the same values.
+
+The displayed balance is calculated from the total minus cumulative payments, with a minimum of zero, rather than the stored `amount_due` value on older invoices. A fully paid invoice always displays a zero balance.
+
 ## Computed Attributes
 
 ### title

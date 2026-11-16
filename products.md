@@ -9,6 +9,10 @@ Products represent goods or services that can be sold. Products can have multipl
 **Model:** `VentureDrake\LaravelCrm\Models\Product`
 **Table:** `{prefix}products` (default: `crm_products`)
 
+## Saving document line items
+
+On quote, order, invoice, purchase-order and delivery forms, **Save captures the values currently entered in the product editor**, including changes made immediately before clicking Save or pressing Enter. You do not need to wait for the totals preview to refresh. The form pauses editing while it prepares and saves the lines. If validation fails or a request cannot complete, you can correct the entries or retry without re-entering them.
+
 ## Attributes
 
 | Attribute | Type | Description |

@@ -113,6 +113,12 @@ The modal is mounted once in the layout rather than once per row, and `confirm()
 
 ## Creating a Purchase Order
 
+New purchase orders default to **Pickup** when no eligible company delivery addresses are available, including when creating a purchase order from an order. When an eligible address exists, the default is **Deliver** and you must select an address before saving.
+
+Manage company delivery addresses in **Settings → General → Addresses**. The empty-address guidance links directly to this editor for users who can edit settings; other users are directed to an administrator. An eligible address needs a nonblank street or city — a country alone is not enough. You can still select Deliver without an address, but saving will ask you to add one or use Pickup.
+
+Editing an existing purchase order preserves its delivery choice and offers its saved valid delivery address, even if the original company address has been removed.
+
 ```php
 use VentureDrake\LaravelCrm\Models\PurchaseOrder;
 

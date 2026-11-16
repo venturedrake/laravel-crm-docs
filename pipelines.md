@@ -60,7 +60,19 @@ Pipelines define the workflow that [Leads](/leads), [Deals](/deals), and [Quotes
 
 ## Managing Pipelines
 
-Pipelines and stages are managed through **Settings → Pipelines** and **Settings → Pipeline Stages** in the CRM UI. Stages can be reordered via drag-and-drop and assigned colours that show on the Kanban board.
+Pipelines and stages are managed through **Settings → Pipelines** and **Settings → Pipeline Stages** in the CRM UI.
+
+### Reorder stages
+
+Open **Settings → Pipelines → [pipeline]**. In the **Stages** list, drag a stage by its handle or use its **Move up** and **Move down** buttons (also available with Tab and Enter/Space). You can also open a stage under **Settings → Pipeline Stages** and choose **Reorder stages** in its pipeline card.
+
+Each move saves automatically and shows a confirmation. Wait for it to finish before making another move. Refreshing the page preserves the saved order; the lead, deal or quote board uses that same column order when loaded. Reordering preserves stage identities, colours, probabilities and the records assigned to them. Editing controls require permission to edit the pipeline and its stages.
+
+New stages append to the end. For example, after creating Negotiation, move it before Closed Won and Closed Lost. Moving a stage to another pipeline also appends it to that pipeline; changing only its name or description keeps its position.
+
+If another administrator changes the order or adds, removes or moves a stage while your page is open, your outdated move saves nothing. The current list reloads with an explanation so you can try again. If a request fails, reload to check the saved order before retrying.
+
+A pipeline supports up to 127 consecutive stage positions. If older positions have gaps and reach that limit, reorder the existing stages to close the gaps before adding another.
 
 ## Board View
 

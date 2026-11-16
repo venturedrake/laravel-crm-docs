@@ -15,7 +15,6 @@ Deliveries track the physical shipment of goods from an [Order](/orders). Each d
 |---|---|---|
 | `external_id` | `string` | UUID used in URLs (auto-generated) |
 | `delivery_id` | `string` | Delivery identifier |
-| `reference` | `string` | External reference |
 | `description` | `text` | Description |
 | `delivery_expected` | `date` | Expected delivery date |
 | `delivered_on` | `date` | Actual delivery date |
@@ -24,6 +23,8 @@ Deliveries track the physical shipment of goods from an [Order](/orders). Each d
 | `user_assigned_id` | `integer` | Assigned user |
 
 Both dates can be adjusted in the UI with the [delivery options](#delivery-options): `delivered_on` can be hidden, and `delivery_expected` relabelled.
+
+The reference displayed in the delivery list and detail view comes from the source order (`$delivery->order->reference`). Deliveries have no reference column of their own. A missing or empty order reference displays as blank; a soft-deleted order still supplies its reference and contact information.
 
 ## Relationships
 
@@ -49,7 +50,7 @@ $address = $delivery->getShippingAddress();
 
 ### title
 
-Returns the order total and client/organisation name.
+Returns the formatted order total and contact name, preferring the client, then the organisation, then the legacy organisation person, then the order's person. A person-only order therefore includes the person's name in the delivery heading. A delivery without an order has no title.
 
 ```php
 $delivery->title; // "$1,500.00 - Acme Corp"
@@ -78,6 +79,8 @@ Since 2.5.0 a delivery line prints the [product variation](/product-variations) 
 > **Note:** A **soft-deleted product stays readable** on the deliveries that already reference it. `DeliveryProduct::orderProduct()` resolves `withTrashed()`, and the order line's own product relation does too, so the line keeps its description on the show view and in all 14 PDF templates. See [Products](/products).
 
 The quantity control on the Order → Delivery form is a bounded number input, and the cap is enforced **server-side**: on submit the remainder is recomputed from the order line and the deliveries already raised against it. The delivery form previously ran no quantity validation at all.
+
+Saving a delivery captures the quantity currently entered, even when its preview update is still pending. For example, an order for **2.5** with **1.25** already delivered leaves **0.75** after entering **0.5** on a second delivery and immediately pressing Save. Editing an existing delivery uses the same submission path and updates its existing lines.
 
 ## Delivery Options
 
