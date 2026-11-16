@@ -62,6 +62,12 @@ $value = $lead->customFieldValues()
     ->first();
 ```
 
+## Deleting a Field
+
+Since 2.7.0 `FieldObserver` removes a field's links to models and its stored values when the field is deleted ([#100](https://github.com/venturedrake/laravel-crm/issues/100)). Before, the links stayed live, and creating any record of a linked model failed. The 2.7.0 upgrade soft-deletes the links and values left behind by earlier deletes, see the [Upgrade Guide](/upgrading#deleted-custom-fields-stop-breaking-record-creation).
+
+Custom field defaults are set before the form binds them, and a form in grouped mode renders each field once ([#113](https://github.com/venturedrake/laravel-crm/issues/113)).
+
 ## Traits
 
 All custom field models use:

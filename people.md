@@ -102,6 +102,25 @@ $person->phones()->create([
 ]);
 ```
 
+## Email and Phone Validation
+
+Since 2.7.0 the person, organization, lead, deal, quote and order forms check the format of email addresses and phone numbers, and so do the person, organization, lead and deal [API](/api#conventions) endpoints. Two rules in `VentureDrake\LaravelCrm\Http\Rules` do the checking:
+
+| Rule | Accepts |
+|---|---|
+| `ContactEmail` | An address that passes `email:rfc`. The domain is never looked up in DNS. |
+| `PhoneNumber` | Digits, spaces and `+ - ( ) .`, with an optional `ext` or `x` extension, and at least six digits before any extension. |
+
+An address or number already saved on the record passes as it is, so a value that predates these rules or came from an import does not block an unrelated edit. Stored values are not changed.
+
+A person created from a lead, deal, quote or order form saves their email with the **work** type ([#144](https://github.com/venturedrake/laravel-crm/issues/144)). Before, it had no type, which then blocked unrelated edits on the person form.
+
+## Deleting a Person
+
+Since 2.7.0, deleting a person warns which records still link to them. Those records stay, and show the contact as "Name (deleted)". The same applies to [organizations](/organizations).
+
+The person show page formats the birthday with the `date_format` setting.
+
 ## Searching & Filtering
 
 Searchable by `first_name`, `middle_name`, `last_name`, and `maiden_name`. Filterable by `user_owner_id` and `labels.id`. Sortable by `id`, `first_name`, `last_name`, `created_at`, and `updated_at`.

@@ -4,6 +4,180 @@
 
 Two things to read before any upgrade: the **version-specific notes** for the release you are moving to, and [Upgrading Within 2.x](#upgrading-within-2x), which is the same every release. Read the version notes **first** — some releases change who is allowed to do what, and the failure mode is a `403` for a user who could previously click the button.
 
+## Upgrading to 2.7.0
+
+A minor release. It adds [email campaign audiences](/email-marketing#audiences), [part payments on invoices](/invoices#payments), [pipeline stage ordering](/pipelines#managing-pipelines) and [paged boards](/pipelines#board-view), and fixes a [stored XSS](/security#stored-markup-escaping) in notes, task descriptions and PDF free text. It is a minor rather than a patch release because it adds a configuration key (`board.per_column`), new columns and new features. The upgrade is the usual
+
+```bash
+composer update venturedrake/laravel-crm
+php artisan laravelcrm:update
+```
+
+but **take a database backup first**. Five of its six migrations change existing rows and have no `down()`. Three rewrite invoice and lead data, two of them lossily (see the table), and the other two soft-delete rows. Only the email campaign audience migration can be rolled back. If you have published views, the XSS fix only reaches you once you re-publish the affected ones (see [Views to re-publish](#views-to-re-publish)).
+
+**Still on CRM 1.x?** Follow [Upgrading from v1](#upgrading-from-v1-go-straight-to-260) with `^2.7.0` in place of `^2.6.0`.
+
+### Six migrations
+
+All six live in `database/updates/` and run with a plain `php artisan migrate` (or `laravelcrm:update`). Each is guarded, so running it again changes nothing.
+
+| Migration | What it does | Reversible |
+|---|---|---|
+| `2026_11_01_000001_backfill_amount_due_on_laravel_crm_invoices_table` | Gives every invoice with a `NULL` balance one | No (see below) |
+| `2026_11_01_000002_settle_legacy_paid_invoices_on_laravel_crm_invoices_table` | Records invoices marked paid as paid in full | **No, lossy** (see below) |
+| `2026_11_06_000001_reopen_leads_whose_deals_were_deleted_on_laravel_crm_leads_table` | Clears `converted_at` on leads whose only deals were deleted | **No, lossy** (see below) |
+| `2026_11_08_000001_remove_orphaned_custom_field_links_on_laravel_crm_field_models_table` | Soft-deletes custom field links and values whose field is gone | No |
+| `2026_11_11_000001_remove_country_only_addresses_on_laravel_crm_addresses_table` | Soft-deletes order and delivery addresses that hold only a country | No |
+| `2026_11_12_000001_add_audience_to_laravel_crm_email_campaigns_table` | Adds `audience_type` (default `all`) and `audience_ids` to `crm_email_campaigns` | Yes |
+
+The version bump to `2.7.0` re-arms the [settings-seeding pass](/updates#settings-seeding) and the update banner, as usual.
+
+### New config key
+
+```php
+'board' => [
+    'per_column' => env('LARAVEL_CRM_BOARD_PER_COLUMN', 20),
+],
+```
+
+It reaches an existing install through `mergeConfigFrom`, so you do not need to re-publish `config/laravel-crm.php`. See [Configuration → Kanban Boards](/configuration#kanban-boards) and [Boards load one page per column](#boards-load-one-page-per-column).
+
+### Two invoice balance migrations, neither reversible
+
+Each only fills in or corrects stored values, and each has an empty `down()`. The values they replace carried no information worth restoring, so a rollback leaves the corrected ones in place.
+
+- `2026_11_01_000001_backfill_amount_due_on_laravel_crm_invoices_table` gives every invoice with a `NULL` balance one: `amount_due = total - amount_paid`, with `amount_paid` set to `0` where it was `NULL`. Form-created invoices never had a balance before, so the Pay drawer could not take a payment against them and the dashboard's outstanding total skipped them.
+- `2026_11_01_000002_settle_legacy_paid_invoices_on_laravel_crm_invoices_table` records as paid in full any invoice marked paid with nothing recorded against it (`amount_paid = total`, `amount_due = 0`). The old Pay drawer only ever accepted a payment of `0`, so that is how every invoice paid through it was stored. It also raises any `amount_due` below zero to `0`. **This is the lossy one**: the previous `amount_paid` (always `0` or `NULL`) is overwritten and is not kept anywhere.
+
+### Paid invoices keep their total
+
+Once a payment is recorded against an invoice, an edit that would change its subtotal or tax is refused, through the form, the API (`422` on `line_items`) and the legacy controller alike. A line re-sent with the product, price and quantity it was saved with keeps its saved amount and tax, so edits that leave the lines alone still save, even after a product's tax rate has changed. An edit that changes a line is repriced and then judged. Before, such an edit could leave a part-paid invoice with no way to close it, or reopen a paid one and lose the date it was paid on. See [Invoices → Payments](/invoices#payments).
+
+### Boards load one page per column
+
+The leads, deals and quotes boards now render 20 cards per column with a **Load more** button, and each column header shows its full count with the value of the whole column beneath it, one line per currency. Set `LARAVEL_CRM_BOARD_PER_COLUMN` to change the page size. Search by contact name on the boards now works with `LARAVEL_CRM_ENCRYPT_DB_FIELDS=true`. See [Pipelines → Board View](/pipelines#board-view).
+
+The quote and invoice lists and the quote board share one Send drawer per page, filled when it opens. If you have published the package's views, republish or update these:
+
+| File | What goes wrong otherwise |
+|---|---|
+| `livewire/kanban-board/stage.blade.php`, `record.blade.php` | No paging controls, and the board's Send item calls a method that no longer exists |
+| `livewire/kanban-board/sortable.blade.php` | Drags still save, but a failed drag or one that overlaps another update leaves the board out of date until the next full render, and card order can go wrong if another session moved a card |
+| `livewire/leads/lead-board.blade.php`, `livewire/deals/deal-board.blade.php` | Load more does nothing |
+| `livewire/quotes/quote-board.blade.php` | Load more and the board's Send item do nothing |
+| `livewire/quotes/quote-send.blade.php`, `livewire/invoices/invoice-send.blade.php` | The Send drawer opens with empty fields |
+| `livewire/quotes/quote-index.blade.php`, `livewire/invoices/invoice-index.blade.php` | Each row keeps its own Send component, so the lists are heavier than they need to be |
+
+If you extend `LeadBoard`, `DealBoard` or `QuoteBoard`, they now extend `PipelineBoard`, which pages its own queries:
+
+- `records()` is no longer called, and returns nothing if you call it through `parent`, so the cards a subclass filtered out come back. Move that filter to `boardScope()`, calling the parent first, and qualify its columns with `$this->column('title')`. A search joins the people and organizations tables, which share columns such as `title`, `user_owner_id` and `team_id`, so a bare column name fails as ambiguous as soon as someone searches.
+- `onStageSorted()` and `onStageChanged()` take new optional arguments. An override with the old signature is a fatal error, so add `$stageId = null, $lastRender = null` and `$fromStage = null, $lastRender = null` respectively.
+
+Boards that extend `KanbanBoard` directly are not paged. One thing changes for a quote board: a card's Send item now dispatches `quote-send` to a shared drawer, instead of calling the board's `send()` method and mounting a drawer per card. `livewire/kanban-board/board.blade.php` mounts that drawer for a quote board, so republish it if you published the views. A board with its own view needs `<livewire:crm-quote-send type="menu-item" />` in it once, or Send does nothing.
+
+### Leads whose deal was deleted are reopened
+
+A converted lead can no longer be converted again, and deleting its last deal now clears `converted_at` so that it can. `2026_11_06_000001_reopen_leads_whose_deals_were_deleted_on_laravel_crm_leads_table` does the same for deals deleted before this release. Those leads would otherwise show as converted with no deal, no **Convert** button, and no place on the list or board. See [Leads → Converting a Lead](/leads#converting-a-lead).
+
+It clears `converted_at` on every lead that has a deleted deal and no remaining deal. Leads with no deals at all, leads with a deal left, and deleted leads are left alone. Expect the following after it runs:
+
+- The reopened leads reappear on the lead list and board, and count as open again.
+- Dashboard conversion figures drop by the same leads.
+- Each lead keeps its current stage, such as **Converted** or **Won**, because nothing records the stage before it. Move them by hand.
+- A lead is reopened even if you replaced its deal with a new one that isn't linked to it, or deleted the deal on purpose, because a deleted deal doesn't say why it went. Delete the lead, or convert it again, if it shouldn't be open.
+
+**This migration is lossy.** `down()` does nothing, because the cleared dates can't be recovered. Take a database backup first. To see which leads it will reopen before you upgrade:
+
+```sql
+SELECT l.id, l.title, l.converted_at
+FROM crm_leads l
+WHERE l.converted_at IS NOT NULL
+  AND l.deleted_at IS NULL
+  AND EXISTS (SELECT 1 FROM crm_deals d WHERE d.lead_id = l.id AND d.deleted_at IS NOT NULL)
+  AND NOT EXISTS (SELECT 1 FROM crm_deals d WHERE d.lead_id = l.id AND d.deleted_at IS NULL);
+```
+
+Use your own table prefix if `db_table_prefix` isn't the default `crm_`.
+
+### Deleted custom fields stop breaking record creation
+
+Deleting a custom field used to leave its links to models live, so creating any record of a linked model failed. `FieldObserver` now removes a field's links and values on delete, and `2026_11_08_000001_remove_orphaned_custom_field_links_on_laravel_crm_field_models_table` soft-deletes the links and values left behind by earlier deletes. Nothing visible is lost: the field they belonged to is already gone. See [Custom Fields → Deleting a Field](/custom-fields#deleting-a-field).
+
+### Country-only order and delivery addresses are removed
+
+The order and delivery forms prefill the country, and an order or delivery saved with its address left blank got an address that was only a country. Those are no longer saved, and `2026_11_11_000001_remove_country_only_addresses_on_laravel_crm_addresses_table` soft-deletes the existing ones. Team (settings) addresses and purchase orders' copies of them are left alone. The purchase-order form no longer offers a team address that has no line 1 or city.
+
+### Email campaigns: existing campaigns target everyone, new ones save as drafts
+
+Existing campaigns get `audience_type = all`, so they keep sending to all subscribed contacts. A new campaign saves as a draft unless you choose **Send now** and confirm it, and a campaign with an empty audience can't be sent. See [Email Marketing → Audiences](/email-marketing#audiences).
+
+### Quotes, orders and contacts are harder to delete or change
+
+- An accepted quote, or one with an order, is read-only, and a quote with an order can't be deleted or unaccepted. See [Quotes → Locked Quotes](/quotes#locked-quotes).
+- An order with invoices, deliveries or purchase orders can't be deleted. See [Orders → Deleting an Order](/orders#deleting-an-order).
+- A tax rate that products still use can't be deleted. See [Tax Rates](/tax-rates#managing-tax-rates).
+- Deleting a person or organization warns which records still link to it, and those records show "Name (deleted)".
+- `/crm/pipelines/create` is a 404. The pipeline stage create page is back at `/crm/pipeline-stages/create`. See [Removed](#removed).
+
+The REST API returns `422` or `403` for the same cases. See [API → Conventions](/api#conventions).
+
+### Stricter validation on contact details and dates
+
+Person, organization, lead, deal, quote and order forms reject badly formed email addresses and phone numbers (`ContactEmail` and `PhoneNumber` rules), and so do the person, organization, lead and deal API endpoints. Stored values are not changed, and an address or number already saved on the record passes as it is, so an older invalid value does not block an unrelated edit. See [People → Email and Phone Validation](/people#email-and-phone-validation).
+
+Invoices, quotes and purchase orders reject an end date before the start date: an invoice due date before its issue date, a quote expiry before its issue date, and a PO delivery date before its issue date. The forms check all three, the invoice and quote API endpoints return a `422`, and the legacy invoice and purchase-order requests check it too. Activity forms reject a finish time before the start time.
+
+### Removed
+
+The v1 pipeline and pipeline stage create/store routes ([#107](https://github.com/venturedrake/laravel-crm/issues/107)). They rendered views v2 never shipped and returned a 500. `/crm/pipelines/create` is now a 404, and the `StorePipelineRequest` and `StorePipelineStageRequest` classes are gone. The pipeline stage create page is back as a v2 Livewire component. See [Pipelines → Managing Pipelines](/pipelines#managing-pipelines).
+
+### Smaller fixes
+
+- **New invoices and purchase orders showed "Sent" before they were sent**, and sending them never set `sent`.
+- **An invalid recipient address in the quote, invoice or PO Send drawer was a 500.** Addresses are validated (comma or semicolon separated) before the PDF is rendered, and a mail transport failure shows an error toast and keeps the drawer open.
+- **The quote email subject and body printed a blank reference** ("Quote  from …"). They use the quote number.
+- **The legacy Send Quote / Invoice / Purchase Order components wrote PDFs to `storage/app/private` on Laravel 11+** instead of `storage/app`.
+- **The update check in `UpdateController` had no timeout.** It has one now, and the version-check client is resolved from a container binding.
+- **Seeded campaign templates left placeholder braces in the preview** ([#137](https://github.com/venturedrake/laravel-crm/issues/137)). `laravelcrm:sample-data` wrote `{{first_name}}` where the editor and renderers use `{first_name}`. The seeder now writes `{key}`, and the email and SMS renderers also accept `{{key}}`, so records already seeded that way render correctly. The unsupported placeholders in existing demo data (`{{product_name}}`, `{{discount}}`, `{{order_id}}`) still show literally until you run `php artisan laravelcrm:sample-data --fresh`.
+- **Email campaign subjects were sent with their placeholders unreplaced**, and the campaign and template preview showed no subject. See [Email Marketing → Placeholders](/email-marketing#placeholders).
+- **The monitor form's scheme selector and URL field disagreed** ([#143](https://github.com/venturedrake/laravel-crm/issues/143)). The URL is built from the selected scheme plus the hostname, and the unsupported TCP option is gone. See [Monitoring](/monitoring#monitor).
+- **The Xero integrations page threw a jQuery error** ([#145](https://github.com/venturedrake/laravel-crm/issues/145)) and showed no organization name when connected.
+- **The product categories page failed on any re-render** ([#126](https://github.com/venturedrake/laravel-crm/issues/126)), and person and other show pages raised `ucfirst(null)` deprecations ([#125](https://github.com/venturedrake/laravel-crm/issues/125)). The person birthday uses the `date_format` setting.
+- **Twelve toast messages showed raw lang keys** ([#112](https://github.com/venturedrake/laravel-crm/issues/112)), and invoice overpayment and a missing pipeline on a stage showed raw validation messages ([#127](https://github.com/venturedrake/laravel-crm/issues/127)).
+- **Line-item edits made just before Save could be lost** ([#134](https://github.com/venturedrake/laravel-crm/issues/134), [#142](https://github.com/venturedrake/laravel-crm/issues/142), [#146](https://github.com/venturedrake/laravel-crm/issues/146), [#147](https://github.com/venturedrake/laravel-crm/issues/147)). Save sends the current rows with the request, a variation picked just before Save is priced as that variation, and a price typed alongside a variation pick is kept.
+- **Board fixes.** The filter drawer's Reset button was a 500 on the lead, deal and quote boards, card menus were cut off by the board, and a card could be moved to a stage outside the board's pipeline. The team list's Owner filter queried a missing column.
+- **Table sorts on display-only columns errored.** The product, order, invoice, purchase-order, delivery and team lists, and the tax rate, pipeline stage, role, custom field group and product category settings lists, now sort only on real columns (`SortsTable`).
+- **The generated lead, deal and quote title overwrote a title typed by hand** when the contact name changed.
+- **The invoice list search crashed** on a missing trait.
+- **Saves are atomic.** Quote, order, invoice, delivery and purchase-order saves, with the contacts and custom field values made alongside them, run in one transaction, and the Xero push runs after commit.
+
+### Views to re-publish
+
+If you have published views into `resources/views/vendor/laravel-crm`, the view finder uses your frozen copy instead of the package's. This release changes more than a hundred views. The ones that matter most:
+
+| View | What you miss if you keep the old copy |
+|---|---|
+| `livewire/notes/note-item.blade.php`, `livewire/tasks/task-item.blade.php` | **The XSS fix.** A frozen copy still runs script stored in a note or task description |
+| `quotes/pdf.blade.php`, `orders/pdf.blade.php`, `invoices/pdf.blade.php`, `purchase-orders/pdf.blade.php`, `deliveries/pdf.blade.php` and every file under `pdfs/` | **The XSS fix** for PDF free text, which the public portal also renders in a browser |
+| `livewire/model-products.blade.php`, and the quote, order, invoice, purchase-order and delivery `-create` / `-edit` views | The searchable product picker, and Save sending the current lines. **With a frozen copy, an edit made just before Save can still be lost** |
+| `livewire/invoices/invoice-pay.blade.php`, `invoice-show.blade.php`, `invoice-index.blade.php`, `invoice-related-index.blade.php`, `portal/invoices/show.blade.php` | Part payments, and the amount paid and balance due |
+| `livewire/kanban-board/*`, `livewire/leads/lead-board.blade.php`, `livewire/deals/deal-board.blade.php`, `livewire/quotes/quote-board.blade.php` | Board paging and the shared Send drawer (see the table under [Boards load one page per column](#boards-load-one-page-per-column)) |
+| `livewire/quotes/quote-show.blade.php`, `quote-index.blade.php`, `livewire/orders/order-show.blade.php`, `order-index.blade.php` | The disabled Edit and Delete buttons on locked quotes and orders, with the reason |
+| `livewire/email-campaigns/email-campaign-create.blade.php`, `email-campaign-edit.blade.php`, `email-campaign-show.blade.php` | Audience selection and draft-by-default sends |
+| `livewire/purchase-orders/purchase-order-form.blade.php` | The Pickup default when the team has no delivery address |
+| `livewire/settings/pipelines/pipeline-show.blade.php`, `livewire/settings/pipeline-stages/pipeline-stage-index.blade.php` | Stage ordering and the **Create pipeline stage** button |
+| `livewire/settings/integrations/xero/xero-connect.blade.php` | The fix for the jQuery error on the Xero page |
+| `livewire/monitors/_monitor-form.blade.php` | The scheme selector fix |
+| `mail/templates/send-quote/subject.blade.php`, `message.blade.php` | The quote number in the email instead of a blank reference |
+
+New views (`components/board-card-menu`, `components/record-link`, `livewire/email-campaigns/_audience-send`, `_confirm-send`, `livewire/kanban-board/records`, `scripts`, `livewire/settings/pipeline-stages/pipeline-stage-create`, `settings/pipeline-stages/create`) are read from the package unless you publish them. Run `git diff 2.6.0 2.7.0 --stat -- resources/views` in the package for the full list.
+
+If you publish lang files, many keys were added to `en` and `fa`.
+
+### Development dependencies
+
+The package's dev dependencies moved to Pest 3/4 and Testbench 10/11, because Composer now blocks every Laravel 10/11 release on security advisories and `pest-plugin-laravel ^2` no longer resolved. Host apps are unaffected.
+
 ## Upgrading to 2.6.0
 
 A minor release. It adds three groups of configuration keys: [order form options](/orders#form-options), [delivery options](/deliveries#delivery-options) and a fixed [route domain](/configuration#route-domain). Every key defaults to the current behaviour, so an install that sets nothing sees no change. It also fixes user deletion, product-line comments and ordering, invoice line tax on update, and the v1 → v2 upgrade (`laravelcrm:v2`). The `laravelcrm:v2` fixes were prepared as 2.5.1, which was never tagged, so 2.6.0 is the first release that has them.

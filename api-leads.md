@@ -52,6 +52,8 @@ Accepted on `POST` / `PUT` (`*` = required on `POST`):
 
 `title*`, `description`, `amount`, `currency` (3-letter), `expected_close` (ISO-8601), `person_id` (UUID), `organization_id` (UUID), `lead_source_id` (UUID), `pipeline_stage_id` (UUID), `user_owner_id` (int), `labels[]` (UUIDs).
 
+> **Note:** Since 2.7.0 email and phone values on the request are format-checked, and a converted lead can't be given a second deal through [`POST /deals`](/api-deals). See [API → Conventions](/api#conventions).
+
 ## Example
 
 ```bash

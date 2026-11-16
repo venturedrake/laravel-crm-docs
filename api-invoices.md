@@ -57,11 +57,19 @@ Accepted on `POST` only — the source order is set at creation and cannot be re
 
 `order_id` (UUID).
 
-> **Important:** `subtotal` and `total` are **not** writable. Both are computed from `line_items` and `tax`, and sending either is a `422`. They are still returned in the response shape above. See [API → Conventions](/api#conventions).
+> **Important:** `subtotal` and `total` are **not** writable. Both are computed from the saved `line_items` and their tax, and sending either is a `422`. They are still returned in the response shape above. Since 2.7.0 the header `tax` is the sum of the lines' tax: it is still accepted, and rejects negatives, but is ignored. See [API → Conventions](/api#conventions).
+
+> **Important:** Since 2.7.0, on invoices:
+>
+> - **A line's `amount` is derived.** It is stored as `unit_price × quantity`, rounded to the cent. `line_items.*.amount` is still required, but a posted amount that differs is ignored; send the reduced `unit_price` for a discounted line.
+> - **A paid invoice's totals are locked.** Once it has any `amount_paid` or a `fully_paid_at`, a `PUT` whose `line_items` would change its subtotal or tax is a `422` on `line_items` and nothing is saved. Lines re-sent unchanged with their `id`, and a `PUT` that omits `line_items`, still save.
+> - **`due_date` can't be before `issue_date`.** An earlier day is a `422`. Both keep only the date.
+>
+> See [API → Conventions](/api#conventions) and [Invoices → Payments](/invoices#payments).
 
 > **Note:** Invoices have no `discount` or `adjustments` field — quotes and orders do, invoices do not. That is deliberate, not an omission from this list: `tax` is the only rate-style field an invoice write accepts, and it rejects negative values.
 
 ## Nested line items
 
-Same shape and rules as [Quotes → Nested line items](/api-quotes#nested-line-items).
+Same shape and rules as [Quotes → Nested line items](/api-quotes#nested-line-items), except that the stored `amount` is computed from `unit_price × quantity`: the posted `amount` is validated but not stored.
 

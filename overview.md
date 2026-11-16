@@ -71,15 +71,15 @@ The sidebar navigation is organized into the following sections:
 
 Most entities provide a paginated table view with:
 
-- **Search** — Text search across key fields.
+- **Search** — Text search across key fields. On quotes, orders, invoices, purchase orders, leads, deals and deliveries, the search also finds a record by its number with or without the prefix (`QU-3002`, `3002` or `qu-3002`), and by its reference where it has one.
 - **Filters** — Filter by owner, labels, and other entity-specific criteria. The Owner filter searches on the server: type a name to find matching users, up to 20 at a time. Selected owners stay visible as chips, and **Clear** empties the filter (there is no **Select all**).
-- **Sorting** — Click column headers to sort ascending/descending.
+- **Sorting** — Click column headers to sort ascending/descending. Since 2.7.0 the product, order, invoice, purchase-order, delivery and team lists, and the tax rate, pipeline stage, role, custom field group and product category settings lists, sort only on real columns (`SortsTable`), so a display-only column or an unsupported sort in the URL never reaches the query. The quote list has its own allow-list of sortable columns.
 - **Actions** — View, edit, and delete buttons on each row.
 - **Create Button** — Prominently placed button to add new records.
 
 ### Board Views
 
-Leads, deals, and quotes offer a Kanban-style board view where records are displayed as cards organized by pipeline stage. Cards can be dragged between stages using SortableJS. Switch between list and board views using the toggle buttons.
+Leads, deals, and quotes offer a Kanban-style board view where records are displayed as cards organized by pipeline stage. Cards can be dragged between stages using SortableJS. Switch between list and board views using the toggle buttons. Each column renders a page of cards with **Load more**, and its header shows the column's count and total value. See [Pipelines → Board View](/pipelines#board-view).
 
 ### Detail Views
 
@@ -88,7 +88,7 @@ Each entity's detail page typically shows:
 - **Header** — Title, ID, and status information with action buttons (edit, delete, and entity-specific actions like "Convert to Deal" or "Mark as Won").
 - **Details Card** — Key attributes displayed in a structured layout.
 - **Related Records** — Associated people, organisations, products, and other linked entities displayed via reusable Livewire sub-components.
-- **Activity Timeline** — A chronological feed of notes, tasks, calls, meetings, and file uploads associated with the record.
+- **Activity Timeline** — A chronological feed of notes, tasks, calls, meetings, and file uploads associated with the record. Since 2.7.0 the tabs other than Activity and pinned notes load when you open them, and the guest pickers on the call, meeting and lunch panels search people on the server, returning up to 20 matches for the term you type.
 - **Custom Fields** — Any custom fields configured for the entity type.
 
 ### Forms
@@ -96,11 +96,12 @@ Each entity's detail page typically shows:
 Create and edit forms use a consistent card-based layout with:
 
 - **Autocomplete Fields** — People, organisations, and products use autocomplete for quick selection. If you pick a person or organisation and then edit the name, the field unlinks from the picked record and shows **New**, so saving creates a new record rather than attaching the old one.
-- **Dynamic Product Lines** — Deals, quotes, orders, invoices, deliveries, and purchase orders support adding multiple product line items with quantity, price, tax rate, and subtotal calculations. Quantities accept up to three decimal places. On every type except deliveries, which draw down order lines, a product with active [variations](/product-variations) gets a variation select beside it, and picking one reprices the line. On quotes, orders, invoices and purchase orders, lines can be dragged to reorder them, and each line takes an optional comment that prints inside the product's cell on the show page and PDF.
+- **Dynamic Product Lines** — Deals, quotes, orders, invoices, deliveries, and purchase orders support adding multiple product line items with quantity, price, tax rate, and subtotal calculations. The product picker searches the catalogue on the server (see [Products](/products#line-item-product-picker)), and Save sends the current rows with the request, so an edit made just before Save is kept. Quantities accept up to three decimal places. On every type except deliveries, which draw down order lines, a product with active [variations](/product-variations) gets a variation select beside it, and picking one reprices the line. On quotes, orders, invoices and purchase orders, lines can be dragged to reorder them, and each line takes an optional comment that prints inside the product's cell on the show page and PDF.
 - **PDF Template Picker** — Quote, order, invoice, delivery, and purchase-order forms carry a **PDF template** select pinning one of the five shipped layouts to that record, or leaving it to follow the Settings default. See [PDF Templates](/pdf-templates).
 - **Address Fields** — Structured address input with multiple address support.
-- **Email & Phone Fields** — Multiple email addresses and phone numbers with type selection (work, home, etc.).
+- **Email & Phone Fields** — Multiple email addresses and phone numbers with type selection (work, home, etc.). Since 2.7.0 badly formed values are rejected, see [People → Email and Phone Validation](/people#email-and-phone-validation).
 - **Label Selection** — Tag records with colour-coded labels.
+- **After saving** — Since 2.7.0 an edit form returns to the record's show page (a feature status edit returns to the feature status list). Creating a team lands on the new team, or on the dashboard when `teams` mode is on, because the new team becomes the current tenant.
 - **Custom Fields** — Dynamically rendered custom fields based on field group configuration.
 
 ### PDF Documents

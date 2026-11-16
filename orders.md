@@ -127,7 +127,19 @@ The Order → Invoice and Order → Delivery forms let you invoice or deliver pa
 
 The cap is enforced **server-side**. On submit the remainder is recomputed from the order line and the invoices or deliveries already raised against it, and the submitted quantity is checked against that — not against the row's own `quantity_max`, which is a public Livewire property and therefore whatever the caller sends back. Previously the cap existed only in the browser, so an over-invoice was reachable by posting the form directly. The delivery form, which ran no validation at all, now validates its quantities too.
 
+Since 2.7.0 an invoice raised from a part-invoiced line is priced from the quantity still outstanding, and the final one bills the exact remainder. See [Invoices → Line Items](/invoices#line-items).
+
 `invoiceComplete()` and `deliveryComplete()` compare the drawn-down totals within half the smallest storable unit rather than with `> 0`, so floating-point residue from a split fulfilment cannot leave a document reading as "not fully invoiced" forever.
+
+The order's `subtotal`, `tax` and `total` are summed from its saved lines, as on [quotes](/quotes#document-totals).
+
+## Addresses
+
+Since 2.7.0 an address left blank on the order form is not saved, even though the form prefills its country, and blanking an address on edit removes it ([#115](https://github.com/venturedrake/laravel-crm/issues/115)). The 2.7.0 upgrade soft-deletes the country-only addresses saved before, see the [Upgrade Guide](/upgrading#country-only-order-and-delivery-addresses-are-removed).
+
+## Deleting an Order
+
+Since 2.7.0 an order with invoices, deliveries or purchase orders can't be deleted ([#102](https://github.com/venturedrake/laravel-crm/issues/102)). `OrderPolicy::delete` refuses with the reason, the **Delete** button is disabled with it, and the [API](/api-orders) returns a `403`. Soft-deleted invoices, deliveries and purchase orders do not count. An invoice, delivery or purchase order whose source order was deleted earlier shows the order's number with a **deleted** badge instead of a broken link.
 
 ## Form Options
 
@@ -204,6 +216,8 @@ $order = Order::create([
 ## Searching & Filtering
 
 Searchable by `reference`, `order_id`, and associated person/organisation names. Filterable by `user_owner_id` and `labels.id`.
+
+Since 2.7.0 the list finds an order by its number with or without the prefix, in any case, and by its reference. `%` and `_` in a search term are matched literally.
 
 ## Traits
 

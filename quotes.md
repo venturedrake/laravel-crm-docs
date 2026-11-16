@@ -37,6 +37,8 @@ Quotes represent formal proposals sent to clients with pricing and terms. A quot
 
 > **Note:** All money fields are stored in cents. Mutators automatically multiply by 100 on set.
 
+> **Note:** Since 2.7.0 an `expire_at` on an earlier day than `issue_at` is rejected, in the form and the [API](/api#conventions) ([#106](https://github.com/venturedrake/laravel-crm/issues/106)).
+
 ## Relationships
 
 | Method | Type | Related Model | Description |
@@ -69,6 +71,8 @@ if ($quote->orderComplete()) {
 ## Public Portal
 
 Quotes have a public-facing portal page accessible at `/p/quotes/{external_id}`. This allows recipients to view and accept or reject quotes without needing a CRM login. The page renders the quote's own [PDF template](/pdf-templates), so what the customer reads on screen is the document they download — see [Portal](/portal).
+
+Since 2.7.0 the portal refuses a response to a quote that is already accepted or rejected, or has an order. An expired quote can't be accepted, but it can still be rejected. The expiry day itself still counts as valid.
 
 ### Get link
 
@@ -107,6 +111,12 @@ Reached from the quote via `quoteProducts()`.
 
 When a line's product has active [variations](/product-variations), a variation select appears beside the product. Picking one prices the line from the variation's price in the quote's currency, falling back to the product price. The show page, the PDF, the emailed quote and the portal print the line as `Product — Variation` (`displayName()`), and the show page prints the variation's SKU when it has one (`displayCode()`). Converting the quote to an order carries the variation across.
 
+### Document totals
+
+Since 2.7.0 a quote's `subtotal`, `tax` and `total` come from the lines it saved. `QuoteService::create()` and `update()` sum the stored lines' `amount` and `tax_amount` in cents (`Support\DocumentTotals::fromLines()`) instead of storing the totals the form or API posted, so a line with quantity 0 no longer leaves its amount in the header. Line amounts are computed in integer cents in one place (`Support\LineAmount`), so the form and the "check amounts" badge agree on half-cent boundaries (333.33 × 2.5 = 833.33). Orders, invoices and purchase orders work the same way.
+
+The product picker on each line searches the catalogue on the server, see [Products → Line-item product picker](/products#line-item-product-picker). Save sends the current rows with the request, so a quantity, price or variation changed just before Save is kept.
+
 ### Creating a quote from a deal
 
 Since 2.5.0 a quote created from a [Deal](/deals) starts with the deal's lines — product, variation, quantity and price — and they stay editable. Before, the quote form started empty and the deal's products were dropped.
@@ -127,9 +137,28 @@ A **Preview** action sits beside every download button — on the quote show pag
 
 Route `laravel-crm.quotes.preview`, carrying the same `can:view` guard as its download twin, so preview grants nothing download did not. The viewer chunk and its pdf.js worker are imported lazily, so a user who never opens a preview downloads none of it.
 
+## Sending and Status
+
+A quote is sent from the **Send** drawer on its show page, the quote list or the board. The list and the board share one drawer per page. Recipient addresses are validated before the PDF is rendered, and several can be given separated by commas or semicolons. If the mail transport fails, an error toast shows and the drawer stays open. The email subject and body name the quote by its number.
+
+Since 2.7.0 a quote's pipeline stage follows its status:
+
+- Sending a **Draft** quote moves it to **Sent** once the email has gone.
+- Accepting, rejecting, unaccepting and unrejecting, from the CRM or the [portal](#public-portal), all go through `QuoteStateService`, which updates the stage too.
+
+### Locked Quotes
+
+An accepted quote, or one with an order made from it, is read-only:
+
+- The **Edit** button is disabled with the reason, and the edit route redirects to the show page.
+- `QuoteService::update()` refuses the change, and the [API](/api-quotes) returns a `422`.
+- A quote with an order shows an **Ordered** badge, and can't be unaccepted or deleted (the API returns a `403` on delete).
+
+To change an accepted quote that has no order yet, unaccept it first. Before 2.7.0 accepted and ordered quotes could still be edited, unaccepted or deleted. An order or invoice whose source quote was deleted shows the quote's number with a **deleted** badge instead of a broken link.
+
 ## Views
 
-Quotes support both **list view** (paginated table) and **board view** (Kanban-style pipeline stages).
+Quotes support both **list view** (paginated table) and **board view** (Kanban-style pipeline stages). The board renders a page of cards per column with **Load more**, see [Pipelines → Board View](/pipelines#board-view).
 
 ## Creating a Quote
 
@@ -153,6 +182,8 @@ $quote = Quote::create([
 ## Searching & Filtering
 
 Searchable by `quote_id`, `title`, `reference`, and associated person/organisation names. Filterable by `user_owner_id` and `labels.id`.
+
+Since 2.7.0 the list and board find a quote by its number with or without the prefix, in any case, so "QU-3002", "3002" and "qu-3002" all match. `%` and `_` in a search term are matched literally.
 
 ## Traits
 

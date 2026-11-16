@@ -31,7 +31,9 @@ Invoices represent billing documents generated from [Orders](/orders). An invoic
 | `user_owner_id` | `integer` | Owner user |
 | `user_assigned_id` | `integer` | Assigned user |
 
-> **Note:** All money fields are stored in cents. The `amount_due` accessor returns `total` if no explicit value is set.
+> **Note:** All money fields are stored in cents. Since 2.7.0 a new invoice is saved with `amount_paid = 0` and `amount_due = total`, and the 2.7.0 upgrade gives every older invoice with a `NULL` balance one (see the [Upgrade Guide](/upgrading#two-invoice-balance-migrations-neither-reversible)). The `amount_due` accessor returns `total` only when the stored value is negative.
+
+> **Note:** Since 2.7.0 a `due_date` on an earlier day than `issue_date` is rejected, in the form, the [API](/api#conventions) and the legacy request ([#106](https://github.com/venturedrake/laravel-crm/issues/106)).
 
 > **Note:** `due_date` is nullable, and the [API](/api-invoices) accepts a null value for it. It is guarded on the invoices index, on the show page and in all five [PDF templates](/pdf-templates), and the emailed invoice body has a **no-due-date variant** rather than interpolating a formatted null. Before 2.4.1 a single null due date took down the entire invoices index for every user of the install, not only for whoever created the record.
 
@@ -59,6 +61,20 @@ $invoice->title; // "$1,500.00 - Acme Corp"
 | `ownerUser()` | `belongsTo` | `User` | Owner |
 | `assignedToUser()` | `belongsTo` | `User` | Assigned user |
 
+## Payments
+
+Payments are recorded from the **Pay** drawer on the invoice. Since 2.7.0 it takes part payments:
+
+- **Any amount up to the balance** is accepted and recorded in cents. The toast says how much is still due, e.g. "Payment of $100.00 recorded. $120.00 still due." An amount over the balance is refused with a validation message ([#127](https://github.com/venturedrake/laravel-crm/issues/127)). Reopening the drawer after a part payment no longer shows an empty amount.
+- **The amount paid and balance due** show on the invoice show page, the invoice lists and the [portal](#public-portal) invoice page ([#111](https://github.com/venturedrake/laravel-crm/issues/111), [#116](https://github.com/venturedrake/laravel-crm/issues/116)), and the lists refresh after a payment ([#136](https://github.com/venturedrake/laravel-crm/issues/136)).
+- **Concurrent payments are serialised.**
+
+Before 2.7.0 a part payment was always refused: the drawer checked the amount against a `NULL` balance and subtracted `amount_paid` twice, so only a payment of `0` went through.
+
+### Paid invoices keep their total
+
+Once a payment is recorded, an edit that would change the invoice's subtotal or tax is refused, in the form, the [API](/api-invoices) (`422` on `line_items`) and the legacy controller. A line re-sent with the product, price and quantity it was saved with keeps its saved amount and tax, so an edit that leaves the lines alone still saves, even after a product's tax rate has changed.
+
 ## Public Portal
 
 Invoices have a public-facing portal page accessible at `/p/invoices/{external_id}`. This allows recipients to view invoices without needing a CRM login. The page renders the invoice's own [PDF template](/pdf-templates), so what the customer reads on screen is the document they download — see [Portal](/portal).
@@ -66,6 +82,8 @@ Invoices have a public-facing portal page accessible at `/p/invoices/{external_i
 ### Get link
 
 A **Get link** button beside Preview, on the invoice show page and on index rows, hands over the same 14-day signed portal URL that gets emailed to the customer, with an optional **mark as sent** tick. Before 2.4.1 the only way to obtain that link was to send the invoice.
+
+Since 2.7.0 a new invoice shows no **Sent** badge until it has been sent, and sending it from the Send drawer sets `sent`. The Send drawer validates recipient addresses (comma or semicolon separated) before the PDF is rendered, and keeps the drawer open with an error toast if the mail transport fails. The invoice list shares one Send drawer per page.
 
 The modal is mounted once in the layout rather than once per row, and `confirm()` re-resolves the record through `Support\PortalLink`'s model whitelist and the invoice policy rather than trusting the component's own state — a tampered payload cannot mint a link to a record the caller may not view.
 
@@ -97,6 +115,10 @@ Reached from the invoice via `invoiceLines()`.
 > **Note:** A line can carry a [product variation](/product-variations). The variation select appears once a product with active variations is chosen, and picking one prices the line in the invoice's currency. The show page, PDF, emailed invoice and portal print `Product — Variation`, and an invoice raised from an order keeps the order line's variation. The [Xero](/xero#line-items) sync sends the variation name in the line description.
 
 When an invoice is raised from an [Order](/orders#drawing-down-an-order-line), the quantity is capped at the order line's outstanding remainder, recomputed server-side from the invoices already raised against it.
+
+Since 2.7.0 a follow-up invoice from a part-invoiced order is priced from the quantity still outstanding, and skips lines already invoiced in full. The final invoice for a line bills the exact remainder, so invoicing 1.25 and then 1.25 of a 2.5 line worth 833.33 comes to 833.33 rather than 833.32. Before, a follow-up invoice billed the whole order line again.
+
+The invoice's `subtotal`, `tax` and `total` are summed from its saved lines, as on [quotes](/quotes#document-totals). An invoice line's `amount` is `price × quantity`, rounded to the cent.
 
 > **Note:** Before 2.6.0, updating an invoice changed the tax on its existing lines. `InvoiceService::update()` looked up the tax rate with the invoice line's own id instead of the product id, so an existing line took its tax from whichever product had that id, or got no tax when there was none. New lines were not affected. An invoice edited on an earlier version keeps the wrong tax until its lines are saved again.
 
@@ -138,6 +160,8 @@ $invoice = Invoice::create([
 ## Searching & Filtering
 
 Searchable by `reference`, `invoice_id`, and associated person/organisation names. Filterable by `user_owner_id` and `labels.id`.
+
+Since 2.7.0 the list finds an invoice by its number with or without the prefix, in any case, and by its reference. `%` and `_` in a search term are matched literally.
 
 ## Traits
 

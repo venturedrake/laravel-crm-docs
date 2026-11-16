@@ -33,6 +33,12 @@ The package's [Configuration](/configuration) exposes two settings that control 
 
 Tax rates are managed through **Settings → Tax Rates** in the CRM UI. The default rate is automatically applied to new product line items but can be overridden on a per-line basis.
 
+Since 2.7.0:
+
+- **A rate must be a number from 0 to 100** ([#104](https://github.com/venturedrake/laravel-crm/issues/104)). Text and negative values were accepted before.
+- **A 0% default rate is kept.** It used to be dropped.
+- **A tax rate that products still use can't be deleted** ([#103](https://github.com/venturedrake/laravel-crm/issues/103)).
+
 ## Usage
 
 ```php

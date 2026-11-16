@@ -58,7 +58,7 @@ php artisan vendor:publish --provider="Dcblogdev\Xero\XeroServiceProvider"
 
 Navigate to **Settings → Integrations → Xero** in the CRM interface. Click the **Connect** button to initiate the OAuth2 flow. You will be redirected to Xero to authorize the connection. Once authorized, you will be redirected back to the CRM with an active connection.
 
-The connected Xero tenant name is displayed on the integration page once authenticated.
+The connected Xero organisation name is displayed on the integration page once authenticated. Before 2.7.0 the page threw a jQuery error and showed no organisation name when connected ([#145](https://github.com/venturedrake/laravel-crm/issues/145)).
 
 To disconnect, click the **Disconnect** button on the same page.
 

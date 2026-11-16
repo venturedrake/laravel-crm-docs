@@ -27,6 +27,8 @@ The module is enabled via the `sms-marketing` entry in the [`modules`](/configur
 
 System templates are seeded by the `seed_laravel_crm_sms_templates` migration. Custom templates can be created at any time via **Settings → SMS Templates**.
 
+Placeholders use single braces, such as `{first_name}`. Since 2.7.0 the SMS renderer also accepts `{{first_name}}` and replaces it whole. See [Email Marketing → Placeholders](/email-marketing#placeholders).
+
 ## SMS Campaign
 
 | Attribute | Type | Description |

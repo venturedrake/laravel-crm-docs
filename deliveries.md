@@ -79,6 +79,12 @@ Since 2.5.0 a delivery line prints the [product variation](/product-variations) 
 
 The quantity control on the Order → Delivery form is a bounded number input, and the cap is enforced **server-side**: on submit the remainder is recomputed from the order line and the deliveries already raised against it. The delivery form previously ran no quantity validation at all.
 
+Since 2.7.0 line quantities changed on the delivery edit form are saved, and are capped by what is left on the order line ([#135](https://github.com/venturedrake/laravel-crm/issues/135)). Before, an edit to a delivery's quantities was lost.
+
+## Reference, Contact and Address
+
+Since 2.7.0 a delivery reads its reference and contact from its order, so the show page no longer prints them blank. An address left blank on the delivery form is not saved, even though the form prefills its country, and blanking an address on edit removes it ([#115](https://github.com/venturedrake/laravel-crm/issues/115)). The 2.7.0 upgrade soft-deletes the country-only addresses saved before, see the [Upgrade Guide](/upgrading#country-only-order-and-delivery-addresses-are-removed).
+
 ## Delivery Options
 
 Since 2.6.0 the `deliveries` keys in `config/laravel-crm.php` adjust how the two delivery dates appear. The defaults keep the current behaviour.
@@ -136,7 +142,7 @@ $delivery = Delivery::create([
 
 ## Searching & Filtering
 
-Searchable by `reference`, `delivery_id`, and associated person/organisation names.
+Searchable by `reference`, `delivery_id`, and associated person/organisation names. Since 2.7.0 the list finds a delivery by its number with or without the prefix, in any case. `%` and `_` in a search term are matched literally.
 
 ## Traits
 

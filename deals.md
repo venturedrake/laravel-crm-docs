@@ -53,6 +53,12 @@ A deal's products are `DealProduct` lines, reached via `dealProducts()`. Since 2
 
 Creating a [Quote](/quotes#creating-a-quote-from-a-deal) from the deal starts the quote with the deal's lines, variations included.
 
+A deal saved without products shows no products section, and a blank product row on the form is not saved as a line ([#139](https://github.com/venturedrake/laravel-crm/issues/139)). The product picker on each line searches the catalogue on the server, see [Products → Line-item product picker](/products#line-item-product-picker).
+
+## Converting from a Lead
+
+A deal made from a [lead](/leads#converting-a-lead) sets `lead_id`. Since 2.7.0 `DealService::create()` refuses a lead that is already converted, with a validation error on `lead_id` ("This lead has already been converted to a deal"), and the [API](/api-deals) returns it as a `422`. Deleting a lead's last deal clears the lead's `converted_at`, so it can be converted again.
+
 ## Linked Contacts
 
 Since 2.5.0, saving a deal with both a contact person and an organization links the two as related contacts. See [People → Related contacts](/people#related-contacts).
@@ -77,9 +83,11 @@ $deal = Deal::create([
 
 Deals are searchable by `deal_id`, `title`, and associated person/organisation names. Filterable by `user_owner_id` and `labels.id`.
 
+Since 2.7.0 the list and board find a deal by its number with or without the prefix, in any case. `%` and `_` in a search term are matched literally.
+
 ## Views
 
-Deals support both **list view** (paginated table) and **board view** (Kanban-style pipeline stages). Toggle between views using the view switcher.
+Deals support both **list view** (paginated table) and **board view** (Kanban-style pipeline stages). Toggle between views using the view switcher. The board renders a page of cards per column with **Load more**, see [Pipelines → Board View](/pipelines#board-view).
 
 ## Traits
 

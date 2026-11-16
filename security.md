@@ -72,6 +72,16 @@ The portal controllers now pin `SettingService` to the **document's own team** v
 
 This narrows nothing: the signature is the authorisation, and the settings the page renders are pinned to the document's own team regardless of the session.
 
+## Stored Markup Escaping
+
+Record content that users type is escaped wherever it is rendered, with its line breaks kept. Before 2.7.0 three places echoed it unescaped, which was a stored XSS:
+
+- **Note content.** A note containing `<img src=x onerror=…>` ran script for every user who opened the record. See [Notes](/notes).
+- **Task descriptions.** The same, for tasks. See [Tasks](/tasks).
+- **PDF free text.** The [PDF templates](/pdf-templates) printed the description, terms, delivery instructions, contact details and payment instructions unescaped. The public [portal](/portal#portal-documents) renders those templates in a browser.
+
+A published view keeps the old, unescaped output until you re-publish it. The views are `livewire/notes/note-item.blade.php`, `livewire/tasks/task-item.blade.php`, the five `*/pdf.blade.php` document views and every file under `pdfs/`. See the [Upgrade Guide](/upgrading#views-to-re-publish).
+
 ## API Data Scoping
 
 Every foreign key on an API write is validated against the caller's team by the `ScopedExists` rule. The bare Laravel `exists` rule queries the database directly and so bypasses the team scope, which let an authenticated caller reference another tenant's `external_id` and have it accepted. A table with no `team_id` column falls back to a bare `exists` rather than producing a SQL error, and a caller holding no current team is failed rather than passed.

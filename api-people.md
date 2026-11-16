@@ -47,3 +47,4 @@ Accepted on `POST` / `PUT` (`*` = required on `POST`):
 
 `title`, `first_name*`, `middle_name`, `last_name`, `gender`, `birthday` (date), `description`, `organization_id` (UUID), `user_owner_id` (int), `labels[]` (UUIDs).
 
+> **Note:** Since 2.7.0 email and phone values on the request are format-checked with the same rules as the forms, and a badly formed one is a `422`. See [API → Conventions](/api#conventions).

@@ -48,3 +48,4 @@ Accepted on `POST` / `PUT` (`*` = required on `POST`):
 
 `name*`, `description`, `vat_number`, `linkedin`, `number_of_employees` (int), `annual_revenue`, `total_money_raised`, `organization_type_id` (int), `industry_id` (int), `timezone_id` (int), `user_owner_id` (int).
 
+> **Note:** Since 2.7.0 email and phone values on the request are format-checked with the same rules as the forms, and a badly formed one is a `422`. See [API → Conventions](/api#conventions).

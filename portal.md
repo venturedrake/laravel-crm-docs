@@ -44,7 +44,9 @@ A portal document page renders **the record's own PDF template** — the custome
 
 `Support\PortalDocument` renders the view `PdfTemplateRegistry::viewForModel()` returns — the same call the download path makes — with the same view data, and embeds the result in a self-sizing sandboxed iframe. Template resolution is therefore identical on both surfaces: the record's `pdf_template` column, the **Settings → Templates** default for that document type, a published view, then `modern`. See [PDF Templates](/pdf-templates).
 
-**The sandbox deliberately withholds `allow-scripts`.** PDF templates emit record content unescaped, which is safe in a PDF renderer and is not safe in a browser document. Nothing in a template needs to run script, so the capability is simply not granted.
+**The sandbox deliberately withholds `allow-scripts`.** Nothing in a template needs to run script, so the capability is simply not granted. Since 2.7.0 the templates also escape the free text they print (description, terms, delivery instructions, contact details and payment instructions), with line breaks kept. Before, they printed it unescaped, which was safe in a PDF renderer but not in a browser document. See [Security → Stored Markup Escaping](/security#stored-markup-escaping).
+
+Since 2.7.0 the invoice portal page shows the amount paid and the balance due. See [Invoices → Payments](/invoices#payments).
 
 One correction is applied on the way out, because DomPDF and a browser genuinely disagree: DomPDF multiplies the font's own height by a unitless `line-height` rather than treating it as the line box height, so a template declaring `1.2` renders at roughly `1.79em` there and `1.2em` in a browser. `PortalDocument` rewrites the declared line heights for `modern`, `bold`, `compact` and `professional` so the page's line pitch matches the PDF's. `classic` declares no unitless line-height and is excluded. The correction lives in `PortalDocument` rather than in the shared templates, so the generated PDFs are byte-for-byte unaffected.
 

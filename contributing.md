@@ -39,7 +39,13 @@ Run the test suite:
 composer test
 ```
 
-Tests use Orchestra Testbench with SQLite in-memory database.
+Tests use Orchestra Testbench with SQLite in-memory database. Since 2.7.0 the dev dependencies are Pest 3/4 and Testbench 10/11.
+
+Browser regression tests run with Playwright:
+
+```bash
+npm run test:browser
+```
 
 ## Pull Requests
 

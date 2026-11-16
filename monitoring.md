@@ -32,7 +32,7 @@ The module is enabled via the `monitoring` entry in the [`modules`](/configurati
 | `name` | `string` | Display name (falls back to `host` or `url`) |
 | `description` | `text` | Optional notes |
 | `type` | `string` | `http` or `https` |
-| `url` | `string(1024)` | Full URL to check |
+| `url` | `string(1024)` | Full URL to check, built from the scheme and hostname on the form |
 | `host` | `string` | Hostname extracted from URL (used for SSL checks) |
 | `method` | `string(16)` | HTTP method (default `GET`) |
 | `headers` | `json` | Custom request headers |
@@ -54,6 +54,8 @@ The module is enabled via the `monitoring` entry in the [`modules`](/configurati
 | `ssl_issuer` | `string` | SSL issuer common name |
 | `ssl_expires_at` | `datetime` | SSL expiry timestamp |
 | `ssl_notified_at` | `datetime` | When the last SSL alert was sent |
+
+On the monitor form, the URL is built from the selected scheme plus the hostname you type. A full `http://` or `https://` URL pasted into the hostname field moves its scheme into the selector. Since 2.7.0 the two can no longer disagree, and the unsupported TCP option is gone ([#143](https://github.com/venturedrake/laravel-crm/issues/143)).
 
 ### Relationships
 
